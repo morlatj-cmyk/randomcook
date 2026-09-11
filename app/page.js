@@ -8,6 +8,7 @@ import SplashScreen from "@/components/splash-screen";
 import FunFactPopup from "@/components/fun-fact-popup";
 import Logo from "@/components/logo";
 import MixingLoader from "@/components/mixing-loader";
+import WelcomeAuth from "@/components/welcome-auth";
 
 const EQUIPMENT = [
   { id: "Poêle", label: "Poêle", icon: "◗" },
@@ -24,8 +25,9 @@ const CATEGORY_META = {
 };
 
   const FREE_DAILY_SCANS = 2;
-const PREMIUM_FLAG_KEY = "rc_premium";
-const GOAL_KEY = "rc_monthly_goal";
+  const PREMIUM_FLAG_KEY = "rc_premium";
+  const GOAL_KEY = "rc_monthly_goal";
+  const WELCOME_KEY = "rc_welcomed";
 const SCAN_KEY = "rc_scans";
 
 function todayKey() {
@@ -193,6 +195,7 @@ export default function Home() {
   const [savingsLoading, setSavingsLoading] = useState(false);
 
   const [showSplash, setShowSplash] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
   const [showFunFact, setShowFunFact] = useState(false);
   const [equipment, setEquipment] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -259,13 +262,13 @@ export default function Home() {
     if (user?.user_metadata?.is_premium) setIsPremium(true);
   }, [user]);
 
-  const signInWithGoogle = async () => {
+  const signInWithProvider = async (provider) => {
     setAuthError("");
     setAuthLoading(true);
     try {
       const supabase = supabaseRef.current;
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+        provider,
         options: {
           redirectTo:
             process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
@@ -274,9 +277,48 @@ export default function Home() {
       });
       if (oauthError) throw oauthError;
     } catch {
-      setAuthError("La connexion Google n'est pas disponible pour le moment.");
+      setAuthError(
+        provider === "apple"
+          ? "La connexion Apple n'est pas disponible pour le moment."
+          : "La connexion Google n'est pas disponible pour le moment.",
+      );
       setAuthLoading(false);
     }
+  };
+
+  const signInWithEmail = async (email, password) => {
+    const { error: signInError } = await supabaseRef.current.auth.signInWithPassword({ email, password });
+    if (signInError) throw new Error("E-mail ou mot de passe incorrect.");
+  };
+
+  const signUpWithEmail = async (email, password) => {
+    const { data: signUpData, error: signUpError } = await supabaseRef.current.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo:
+          process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
+          `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (signUpError) {
+      const msg = signUpError.message || "";
+      if (/already|exists|registered/i.test(msg)) throw new Error("Un compte existe déjà avec cet e-mail.");
+      if (/password/i.test(msg)) throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
+      if (/rate|too many/i.test(msg)) throw new Error("Trop de tentatives. Réessaie dans quelques minutes.");
+      throw new Error("Inscription impossible pour le moment. Réessaie.");
+    }
+    return signUpData;
+  };
+
+  const dismissWelcome = () => {
+    try {
+      localStorage.setItem(WELCOME_KEY, "1");
+    } catch {
+      /* stockage indisponible : on ignore */
+    }
+    setShowWelcome(false);
+    setShowFunFact(true);
   };
 
   const signOut = async () => {
@@ -586,7 +628,32 @@ export default function Home() {
 
   return (
     <main className="app-shell">
-      {showSplash && <SplashScreen onFinish={() => { setShowSplash(false); setShowFunFact(true); }} />}
+      {showSplash && (
+        <SplashScreen
+          onFinish={() => {
+            setShowSplash(false);
+            let firstLaunch = true;
+            try {
+              firstLaunch = localStorage.getItem(WELCOME_KEY) !== "1";
+            } catch {
+              /* stockage indisponible : on ignore */
+            }
+            if (firstLaunch && !user) setShowWelcome(true);
+            else setShowFunFact(true);
+          }}
+        />
+      )}
+      {showWelcome && !user && (
+        <WelcomeAuth
+          onSkip={dismissWelcome}
+          onGoogle={() => signInWithProvider("google")}
+          onApple={() => signInWithProvider("apple")}
+          onEmailSignIn={signInWithEmail}
+          onEmailSignUp={signUpWithEmail}
+          authLoading={authLoading}
+          authError={authError}
+        />
+      )}
       {showFunFact && <FunFactPopup onClose={() => setShowFunFact(false)} />}
       {regenerating && (
         <div className="mixing-overlay">
@@ -962,7 +1029,10 @@ export default function Home() {
           isPremium={isPremium}
           totalSaved={totalSaved}
           mealsCount={savings.length}
-          onSignIn={signInWithGoogle}
+          onGoogle={() => signInWithProvider("google")}
+          onApple={() => signInWithProvider("apple")}
+          onEmailSignIn={signInWithEmail}
+          onEmailSignUp={signUpWithEmail}
           onSignOut={signOut}
           onUpgrade={() => setPremiumOpen(true)}
           onDeleteAccount={deleteAccount}

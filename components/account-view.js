@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import AuthPanel from "@/components/auth-panel";
 
 const PREMIUM_PERKS = [
   { title: "Recettes illimitées", detail: "Plus de limite de scans par jour." },
@@ -13,7 +14,7 @@ function euro(value) {
   return `${Number(value || 0).toFixed(2).replace(".", ",")} €`;
 }
 
-export default function AccountView({ user, authLoading, isPremium, totalSaved, mealsCount, onSignIn, onSignOut, onUpgrade, onDeleteAccount, authError }) {
+export default function AccountView({ user, authLoading, isPremium, totalSaved, mealsCount, onGoogle, onApple, onEmailSignIn, onEmailSignUp, onSignOut, onUpgrade, onDeleteAccount, authError }) {
   const meta = user?.user_metadata || {};
   const displayName = meta.full_name || meta.name || (user?.email ? user.email.split("@")[0] : "");
   const avatarUrl = meta.avatar_url || meta.picture || "";
@@ -66,11 +67,14 @@ export default function AccountView({ user, authLoading, isPremium, totalSaved, 
         </div>
       ) : (
         <div className="account-card">
-          <button type="button" className="google-button" onClick={onSignIn} disabled={authLoading}>
-            <span className="google-mark" aria-hidden="true">G</span>
-            {authLoading ? "Connexion…" : "Continuer avec Google"}
-          </button>
-          {authError && <p className="scan-hint" role="alert" style={{ color: "var(--accent)" }}>{authError}</p>}
+          <AuthPanel
+            onGoogle={onGoogle}
+            onApple={onApple}
+            onEmailSignIn={onEmailSignIn}
+            onEmailSignUp={onEmailSignUp}
+            authLoading={authLoading}
+            authError={authError}
+          />
           <p className="account-legal">En continuant, tu acceptes de sauvegarder tes économies sur ton compte.</p>
         </div>
       )}

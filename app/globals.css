@@ -141,4 +141,32 @@ button, input { font: inherit; } button, label { cursor: pointer; }
 .legal-page-body .legal-updated { margin-bottom: 20px; font: 500 12px 'DM Mono', monospace; letter-spacing: .04em; color: var(--sage); }
 .legal-page-back { display: inline-block; margin-top: 32px; padding: 13px 20px; border-radius: 13px; background: var(--sage); color: white; font-size: 14px; font-weight: 600; text-decoration: none; }
 
+.welcome-overlay { position: fixed; inset: 0; z-index: 97; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--surface); overflow-y: auto; animation: funfact-fade .3s ease-out both; }
+.welcome-content { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.welcome-mark { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 24px; background: var(--sage); color: white; box-shadow: 0 16px 34px rgba(0,0,0,.18); }
+.welcome-content h1 { margin: 20px 0 8px; font-size: clamp(26px, 7vw, 32px); line-height: 1.1; letter-spacing: -.04em; color: var(--ink); text-wrap: balance; }
+.welcome-content p { margin: 0 0 24px; font-size: 15px; line-height: 1.55; color: var(--muted); text-wrap: pretty; }
+.welcome-skip { margin-top: 18px; border: 0; background: transparent; color: var(--muted); font-size: 14px; font-weight: 600; text-decoration: underline; }
+
+.auth-panel { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.auth-provider { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px; border-radius: 13px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 14px; font-weight: 600; }
+.auth-provider:disabled { opacity: .6; }
+.auth-provider-mark { display: grid; place-items: center; width: 20px; height: 20px; font-weight: 700; }
+.auth-google .auth-provider-mark { color: #4285f4; }
+.auth-apple { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.auth-apple .auth-provider-mark { color: var(--surface); }
+.auth-form { text-align: left; }
+.auth-field { display: flex; flex-direction: column; gap: 6px; }
+.auth-field span { font: 500 11px 'DM Mono', monospace; letter-spacing: .06em; color: var(--sage); }
+.auth-field input { padding: 13px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 15px; }
+.auth-field input:focus { outline: none; border-color: var(--sage); }
+.auth-submit { margin-top: 4px; padding: 14px; border: 0; border-radius: 13px; background: var(--sage); color: white; font-size: 14px; font-weight: 600; }
+.auth-submit:disabled { opacity: .6; }
+.auth-toggle { border: 0; background: transparent; color: var(--sage); font-size: 13px; font-weight: 600; }
+.auth-back { border: 0; background: transparent; color: var(--muted); font-size: 13px; }
+.auth-check { text-align: center; padding: 8px 0; }
+.auth-check-icon { display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--soft); color: var(--sage); font-size: 24px; margin-bottom: 12px; }
+.auth-check h3 { margin: 0 0 8px; font-size: 18px; color: var(--ink); }
+.auth-check p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--muted); }
+
 @media (min-width: 700px) { .app-shell { max-width: 520px; padding-top: 0; } .funfact-overlay, .legal-overlay { align-items: center; } }
