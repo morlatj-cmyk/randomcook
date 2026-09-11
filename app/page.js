@@ -187,8 +187,6 @@ export default function Home() {
 
   const [tab, setTab] = useState("home");
   const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState("");
 
   const [dbSavings, setDbSavings] = useState([]);
   const [guestSavings, setGuestSavings] = useState([]);
@@ -261,30 +259,6 @@ export default function Home() {
   useEffect(() => {
     if (user?.user_metadata?.is_premium) setIsPremium(true);
   }, [user]);
-
-  const signInWithProvider = async (provider) => {
-    setAuthError("");
-    setAuthLoading(true);
-    try {
-      const supabase = supabaseRef.current;
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-            `${window.location.origin}/auth/callback`,
-        },
-      });
-      if (oauthError) throw oauthError;
-    } catch {
-      setAuthError(
-        provider === "apple"
-          ? "La connexion Apple n'est pas disponible pour le moment."
-          : "La connexion Google n'est pas disponible pour le moment.",
-      );
-      setAuthLoading(false);
-    }
-  };
 
   const signInWithEmail = async (email, password) => {
     const { error: signInError } = await supabaseRef.current.auth.signInWithPassword({ email, password });
@@ -646,12 +620,8 @@ export default function Home() {
       {showWelcome && !user && (
         <WelcomeAuth
           onSkip={dismissWelcome}
-          onGoogle={() => signInWithProvider("google")}
-          onApple={() => signInWithProvider("apple")}
           onEmailSignIn={signInWithEmail}
           onEmailSignUp={signUpWithEmail}
-          authLoading={authLoading}
-          authError={authError}
         />
       )}
       {showFunFact && <FunFactPopup onClose={() => setShowFunFact(false)} />}
@@ -1029,8 +999,6 @@ export default function Home() {
           isPremium={isPremium}
           totalSaved={totalSaved}
           mealsCount={savings.length}
-          onGoogle={() => signInWithProvider("google")}
-          onApple={() => signInWithProvider("apple")}
           onEmailSignIn={signInWithEmail}
           onEmailSignUp={signUpWithEmail}
           onSignOut={signOut}

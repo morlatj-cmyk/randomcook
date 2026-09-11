@@ -14,7 +14,7 @@ function euro(value) {
   return `${Number(value || 0).toFixed(2).replace(".", ",")} €`;
 }
 
-export default function AccountView({ user, authLoading, isPremium, totalSaved, mealsCount, onGoogle, onApple, onEmailSignIn, onEmailSignUp, onSignOut, onUpgrade, onDeleteAccount, authError }) {
+export default function AccountView({ user, isPremium, totalSaved, mealsCount, onEmailSignIn, onEmailSignUp, onSignOut, onUpgrade, onDeleteAccount }) {
   const meta = user?.user_metadata || {};
   const displayName = meta.full_name || meta.name || (user?.email ? user.email.split("@")[0] : "");
   const avatarUrl = meta.avatar_url || meta.picture || "";
@@ -68,12 +68,8 @@ export default function AccountView({ user, authLoading, isPremium, totalSaved, 
       ) : (
         <div className="account-card">
           <AuthPanel
-            onGoogle={onGoogle}
-            onApple={onApple}
             onEmailSignIn={onEmailSignIn}
             onEmailSignUp={onEmailSignUp}
-            authLoading={authLoading}
-            authError={authError}
           />
           <p className="account-legal">En continuant, tu acceptes de sauvegarder tes économies sur ton compte.</p>
         </div>
