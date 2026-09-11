@@ -7,6 +7,7 @@ import AccountView from "@/components/account-view";
 import SplashScreen from "@/components/splash-screen";
 import FunFactPopup from "@/components/fun-fact-popup";
 import Logo from "@/components/logo";
+import MixingLoader from "@/components/mixing-loader";
 
 const EQUIPMENT = [
   { id: "Poêle", label: "Poêle", icon: "◗" },
@@ -576,6 +577,11 @@ export default function Home() {
     <main className="app-shell">
       {showSplash && <SplashScreen onFinish={() => { setShowSplash(false); setShowFunFact(true); }} />}
       {showFunFact && <FunFactPopup onClose={() => setShowFunFact(false)} />}
+      {regenerating && (
+        <div className="mixing-overlay">
+          <MixingLoader />
+        </div>
+      )}
       <header className="app-bar">
         <div className="app-brand">
           <span className="brand-mark" aria-hidden="true"><Logo size={22} /></span>

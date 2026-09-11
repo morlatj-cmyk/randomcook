@@ -81,4 +81,24 @@ button, input { font: inherit; } button, label { cursor: pointer; }
 @keyframes funfact-rise { from { opacity: 0; transform: translateY(26px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .funfact-card { animation: funfact-fade .2s ease-out both; } }
 
+.mixing-overlay { position: fixed; inset: 0; z-index: 95; display: flex; align-items: center; justify-content: center; padding: 28px; background: var(--surface); animation: funfact-fade .3s ease-out both; }
+.mixing-loader { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 340px; }
+.mixing-loader h1 { margin: 16px 0 10px; font-size: clamp(26px, 7vw, 34px); line-height: 1.1; letter-spacing: -.05em; color: var(--ink); }
+.mixing-loader p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; text-wrap: pretty; }
+.mixing-loader .section-kicker { margin-top: 6px; }
+.mixing-stage { position: relative; width: 148px; height: 148px; display: grid; place-items: center; margin-bottom: 22px; }
+.mixing-bowl { width: 130px; height: 130px; color: var(--ink); }
+.mixing-bowl-body, .mixing-foot { stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.mixing-surface { stroke: var(--sage); stroke-width: 3; stroke-linecap: round; transform-origin: 60px 58px; animation: mixing-swirl 1.6s ease-in-out infinite; }
+.mixing-spoon { stroke: var(--accent); stroke-width: 3; stroke-linecap: round; fill: none; transform-origin: 60px 60px; animation: mixing-stir 1.6s ease-in-out infinite; }
+.mixing-spoon ellipse { fill: color-mix(in srgb, var(--accent) 22%, transparent); }
+.mixing-steam { position: absolute; top: 6px; width: 46px; height: 32px; color: var(--sage); opacity: .55; }
+.mixing-steam path { stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 42; animation: mixing-steam 2.4s ease-in-out infinite; }
+.mixing-steam path:nth-child(2) { animation-delay: .5s; }
+.mixing-steam path:nth-child(3) { animation-delay: 1s; }
+@keyframes mixing-stir { 0% { transform: rotate(0deg); } 50% { transform: rotate(360deg); } 100% { transform: rotate(360deg); } }
+@keyframes mixing-swirl { 0%, 100% { transform: rotate(-6deg) translateY(0); } 50% { transform: rotate(6deg) translateY(-1px); } }
+@keyframes mixing-steam { 0% { stroke-dashoffset: 42; opacity: 0; } 40% { opacity: .6; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .mixing-surface, .mixing-steam path { animation-duration: 3s; } .mixing-spoon { animation: none; } }
+
 @media (min-width: 700px) { .app-shell { max-width: 520px; padding-top: 0; } .funfact-overlay { align-items: center; } }
