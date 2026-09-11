@@ -33,8 +33,8 @@ const fallbackData = {
       chef_technique: "Émulsion résiduelle",
       required_equipment: ["Poêle"],
       steps: [
-        { step_number: 1, title: "Saisir le riz", instruction: "Chauffe un filet d'huile, ajoute le riz froid et laisse-le tiédir 2 minutes.", timer_seconds: 120 },
-        { step_number: 2, title: "Lier hors du feu", instruction: "Hors du feu, ajoute les jaunes et le parmesan, remue vivement jusqu'à une sauce brillante.", timer_seconds: 45 },
+        { step_number: 1, title: "Saisir le riz", instruction: "Chauffe un filet d'huile, ajoute le riz froid et laisse-le tiédir 2 minutes.", is_cooking_time: true, timer_seconds: 120 },
+        { step_number: 2, title: "Lier hors du feu", instruction: "Hors du feu, ajoute les jaunes et le parmesan, remue vivement jusqu'à une sauce brillante.", is_cooking_time: false, timer_seconds: 0 },
       ],
     },
     {
@@ -46,9 +46,9 @@ const fallbackData = {
       chef_technique: "Réaction de Maillard",
       required_equipment: ["Poêle"],
       steps: [
-        { step_number: 1, title: "Croûte de riz", instruction: "Étale le riz dans une poêle chaude et laisse une croûte se former sans remuer, 4 minutes.", timer_seconds: 240 },
-        { step_number: 2, title: "Assaisonner", instruction: "Ajoute le parmesan, mélange puis réserve au chaud.", timer_seconds: 0 },
-        { step_number: 3, title: "Œuf poêlé", instruction: "Cuis un œuf au plat et pose-le sur le riz. Poivre généreusement.", timer_seconds: 180 },
+        { step_number: 1, title: "Croûte de riz", instruction: "Étale le riz dans une poêle chaude et laisse une croûte se former sans remuer, 4 minutes.", is_cooking_time: true, timer_seconds: 240 },
+        { step_number: 2, title: "Assaisonner", instruction: "Ajoute le parmesan, mélange puis réserve au chaud.", is_cooking_time: false, timer_seconds: 0 },
+        { step_number: 3, title: "Œuf poêlé", instruction: "Cuis un œuf au plat et pose-le sur le riz. Poivre généreusement.", is_cooking_time: true, timer_seconds: 180 },
       ],
     },
     {
@@ -60,9 +60,9 @@ const fallbackData = {
       chef_technique: "Gratinage",
       required_equipment: ["Four"],
       steps: [
-        { step_number: 1, title: "Préchauffer", instruction: "Préchauffe le four à 200°C.", timer_seconds: 0 },
-        { step_number: 2, title: "Monter le plat", instruction: "Mélange le riz, les jaunes et le parmesan, verse dans un plat et lisse la surface.", timer_seconds: 0 },
-        { step_number: 3, title: "Gratiner", instruction: "Enfourne 25 minutes jusqu'à une belle croûte dorée.", timer_seconds: 1500 },
+        { step_number: 1, title: "Préchauffer", instruction: "Préchauffe le four à 200°C.", is_cooking_time: false, timer_seconds: 0 },
+        { step_number: 2, title: "Monter le plat", instruction: "Mélange le riz, les jaunes et le parmesan, verse dans un plat et lisse la surface.", is_cooking_time: false, timer_seconds: 0 },
+        { step_number: 3, title: "Gratiner", instruction: "Enfourne 25 minutes jusqu'à une belle croûte dorée.", is_cooking_time: true, timer_seconds: 1500 },
       ],
     },
   ],
@@ -320,7 +320,7 @@ export default function Home() {
                   <div className="step-content">
                     <h2>{step.title}</h2>
                     <p>{step.instruction}</p>
-                    {step.timer_seconds > 0 && (
+                    {step.is_cooking_time && step.timer_seconds > 0 && (
                       <div className="timer-row">
                         {!timer && <button className="timer-button" onClick={() => startTimer(index, step.timer_seconds)}>Minuteur {formatTime(step.timer_seconds)}</button>}
                         {timer && <span className={`timer${timer.done ? " done" : ""}`}>{timer.done ? "Terminé" : formatTime(timer.remaining)}</span>}

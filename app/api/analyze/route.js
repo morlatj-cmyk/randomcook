@@ -16,6 +16,7 @@ const stepSchema = z.object({
   step_number: z.number().int().min(1),
   title: z.string().min(1).max(80),
   instruction: z.string().min(1).max(500),
+  is_cooking_time: z.boolean(),
   timer_seconds: z.number().int().min(0).max(7200),
 });
 
@@ -55,6 +56,11 @@ Propose jusqu'à 3 recettes basées principalement sur les ingrédients détect�
 - "express" : très rapide, 10 minutes ou moins, gestes minimalistes.
 - "normal" : environ 20 minutes, préparation plus travaillée.
 - "long" : plus longue et gourmande (par exemple une cuisson au four) si le matériel le permet, sinon une version mijotée plus élaborée avec le matériel disponible.
+
+MINUTEURS DE CUISSON
+- is_cooking_time vaut true UNIQUEMENT pour une cuisson ou une chauffe réelle qui demande de surveiller le temps : cuire des pâtes dans l'eau bouillante, saisir à la poêle, mijoter, cuire au four, faire réduire, faire bouillir, etc.
+- is_cooking_time vaut false pour toute étape d'assemblage, de préparation à froid ou de dressage : couper, mélanger, assaisonner, lier hors du feu, émulsionner, dresser, réserver, préchauffer le four à vide.
+- Quand is_cooking_time vaut true, renseigne timer_seconds avec la durée réelle de cuisson. Quand is_cooking_time vaut false, mets impérativement timer_seconds à 0.
 
 Réponds avec l'objet structuré demandé, en français, sans inventer d'ingrédients absents de la photo.`;
 
