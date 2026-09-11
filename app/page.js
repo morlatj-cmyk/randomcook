@@ -23,7 +23,7 @@ const CATEGORY_META = {
   long: { label: "Gourmande", hint: "plus longue" },
 };
 
-const FREE_DAILY_SCANS = 3;
+  const FREE_DAILY_SCANS = 2;
 const PREMIUM_FLAG_KEY = "rc_premium";
 const GOAL_KEY = "rc_monthly_goal";
 const SCAN_KEY = "rc_scans";
