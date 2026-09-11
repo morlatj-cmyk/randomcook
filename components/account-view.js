@@ -11,7 +11,7 @@ function euro(value) {
   return `${Number(value || 0).toFixed(2).replace(".", ",")} €`;
 }
 
-export default function AccountView({ user, authLoading, totalSaved, mealsCount, onSignIn, onSignOut, onUpgrade, authError }) {
+export default function AccountView({ user, authLoading, isPremium, totalSaved, mealsCount, onSignIn, onSignOut, onUpgrade, authError }) {
   const meta = user?.user_metadata || {};
   const displayName = meta.full_name || meta.name || (user?.email ? user.email.split("@")[0] : "");
   const avatarUrl = meta.avatar_url || meta.picture || "";
@@ -55,23 +55,42 @@ export default function AccountView({ user, authLoading, totalSaved, mealsCount,
         </div>
       )}
 
-      <div className="premium-card">
-        <div className="premium-head">
-          <span className="premium-tag">PREMIUM</span>
-          <div className="premium-price"><strong>4,99 €</strong><span>/ mois</span></div>
+      {isPremium ? (
+        <div className="premium-card premium-card-active">
+          <div className="premium-head">
+            <span className="premium-tag">PREMIUM ACTIF</span>
+            <span className="premium-active-check" aria-hidden="true">✓</span>
+          </div>
+          <h2>Tu es Premium</h2>
+          <p>Toutes les fonctionnalités sont débloquées. Merci de soutenir RandomCook&nbsp;!</p>
+          <ul className="premium-perks">
+            {PREMIUM_PERKS.map((perk) => (
+              <li key={perk.title}>
+                <span className="premium-check" aria-hidden="true">✓</span>
+                <span><strong>{perk.title}</strong><small>{perk.detail}</small></span>
+              </li>
+            ))}
+          </ul>
         </div>
-        <h2>Passe au plan supérieur</h2>
-        <p>Débloque tout le potentiel anti-gaspi de RandomCook.</p>
-        <ul className="premium-perks">
-          {PREMIUM_PERKS.map((perk) => (
-            <li key={perk.title}>
-              <span className="premium-check" aria-hidden="true">✓</span>
-              <span><strong>{perk.title}</strong><small>{perk.detail}</small></span>
-            </li>
-          ))}
-        </ul>
-        <button type="button" className="premium-button" onClick={onUpgrade}>Passer à Premium</button>
-      </div>
+      ) : (
+        <div className="premium-card">
+          <div className="premium-head">
+            <span className="premium-tag">PREMIUM</span>
+            <div className="premium-price"><strong>4,99 €</strong><span>/ mois</span></div>
+          </div>
+          <h2>Passe au plan supérieur</h2>
+          <p>Débloque tout le potentiel anti-gaspi de RandomCook.</p>
+          <ul className="premium-perks">
+            {PREMIUM_PERKS.map((perk) => (
+              <li key={perk.title}>
+                <span className="premium-check" aria-hidden="true">✓</span>
+                <span><strong>{perk.title}</strong><small>{perk.detail}</small></span>
+              </li>
+            ))}
+          </ul>
+          <button type="button" className="premium-button" onClick={onUpgrade}>Passer à Premium</button>
+        </div>
+      )}
     </section>
   );
 }

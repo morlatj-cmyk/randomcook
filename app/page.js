@@ -19,6 +19,32 @@ const CATEGORY_META = {
   long: { label: "Gourmande", hint: "plus longue" },
 };
 
+const FREE_DAILY_SCANS = 3;
+const PREMIUM_FLAG_KEY = "rc_premium";
+const GOAL_KEY = "rc_monthly_goal";
+const SCAN_KEY = "rc_scans";
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function readScanCount() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SCAN_KEY) || "{}");
+    return raw.date === todayKey() ? Number(raw.count || 0) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeScanCount(count) {
+  try {
+    localStorage.setItem(SCAN_KEY, JSON.stringify({ date: todayKey(), count }));
+  } catch {
+    /* stockage indisponible : on ignore */
+  }
+}
+
 const fallbackData = {
   detected_ingredients: [
     { name: "Reste de riz cuit", quantity: "1 bol", confidence: "high", note: "" },
@@ -52,6 +78,14 @@ const fallbackData = {
         { step_number: 1, title: "Saisir le riz", instruction: "Chauffe un filet d'huile, ajoute le riz froid et laisse-le tiédir 2 minutes.", is_cooking_time: true, timer_seconds: 120 },
         { step_number: 2, title: "Lier hors du feu", instruction: "Hors du feu, ajoute les jaunes et le parmesan, remue vivement jusqu'à une sauce brillante.", is_cooking_time: false, timer_seconds: 0 },
       ],
+      shopping_suggestions: [
+        { name: "Ciboulette fraîche", reason: "Une touche herbacée qui réveille le riz crémeux." },
+        { name: "Petits pois", reason: "Un peu de couleur et de douceur pour équilibrer." },
+      ],
+      chef_mode: {
+        variation: "Dresse en quenelle avec deux cuillères et râpe un voile de parmesan au dernier moment pour un fini brillant.",
+        pairing: "Un verre de vin blanc sec bien frais, type pinot blanc.",
+      },
     },
     {
       category: "normal",
@@ -79,6 +113,14 @@ const fallbackData = {
         { step_number: 2, title: "Assaisonner", instruction: "Ajoute le parmesan, mélange puis réserve au chaud.", is_cooking_time: false, timer_seconds: 0 },
         { step_number: 3, title: "Œuf poêlé", instruction: "Cuis un œuf au plat et pose-le sur le riz. Poivre généreusement.", is_cooking_time: true, timer_seconds: 180 },
       ],
+      shopping_suggestions: [
+        { name: "Sauce soja", reason: "Apporte le côté umami typique d'un riz sauté." },
+        { name: "Oignon nouveau", reason: "Du croquant et de la fraîcheur en finition." },
+      ],
+      chef_mode: {
+        variation: "Fais sauter le riz par petites quantités à feu vif pour qu'il reste bien détaché et légèrement croustillant.",
+        pairing: "Une bière blonde légère ou un thé vert glacé.",
+      },
     },
     {
       category: "long",
@@ -106,6 +148,14 @@ const fallbackData = {
         { step_number: 2, title: "Monter le plat", instruction: "Mélange le riz, les jaunes et le parmesan, verse dans un plat et lisse la surface.", is_cooking_time: false, timer_seconds: 0 },
         { step_number: 3, title: "Gratiner", instruction: "Enfourne 25 minutes jusqu'à une belle croûte dorée.", is_cooking_time: true, timer_seconds: 1500 },
       ],
+      shopping_suggestions: [
+        { name: "Gruyère râpé", reason: "Pour une croûte encore plus gourmande et filante." },
+        { name: "Muscade", reason: "Une pincée qui parfume subtilement le gratin." },
+      ],
+      chef_mode: {
+        variation: "Termine 2 minutes sous le gril pour une croûte dorée irrégulière et croustillante, puis laisse reposer avant de servir.",
+        pairing: "Un rouge léger servi frais, type gamay, et une salade verte acidulée.",
+      },
     },
   ],
 };
@@ -134,6 +184,9 @@ export default function Home() {
   const [error, setError] = useState("");
   const [activeTimers, setActiveTimers] = useState({});
   const [premiumOpen, setPremiumOpen] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  const [scanCount, setScanCount] = useState(0);
+  const [monthlyGoal, setMonthlyGoal] = useState(0);
   const inputRef = useRef(null);
   const audioContextRef = useRef(null);
 
@@ -172,6 +225,20 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  useEffect(() => {
+    setScanCount(readScanCount());
+    try {
+      setMonthlyGoal(Number(localStorage.getItem(GOAL_KEY) || 0));
+      if (localStorage.getItem(PREMIUM_FLAG_KEY) === "1") setIsPremium(true);
+    } catch {
+      /* stockage indisponible : on ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user?.user_metadata?.is_premium) setIsPremium(true);
+  }, [user]);
+
   const signInWithGoogle = async () => {
     setAuthError("");
     setAuthLoading(true);
@@ -196,6 +263,33 @@ export default function Home() {
     await supabaseRef.current.auth.signOut();
     setUser(null);
     setDbSavings([]);
+  };
+
+  const activatePremium = async () => {
+    setIsPremium(true);
+    try {
+      localStorage.setItem(PREMIUM_FLAG_KEY, "1");
+    } catch {
+      /* stockage indisponible : on ignore */
+    }
+    if (user) {
+      try {
+        await supabaseRef.current.auth.updateUser({ data: { is_premium: true } });
+      } catch {
+        /* mise à jour du profil impossible : le mode démo reste actif localement */
+      }
+    }
+    setPremiumOpen(false);
+  };
+
+  const saveGoal = (value) => {
+    const next = Math.max(0, Math.round(Number(value) || 0));
+    setMonthlyGoal(next);
+    try {
+      localStorage.setItem(GOAL_KEY, String(next));
+    } catch {
+      /* stockage indisponible : on ignore */
+    }
   };
 
   const playChime = () => {
@@ -275,9 +369,19 @@ export default function Home() {
   const handlePhotoUpload = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (!isPremium && readScanCount() >= FREE_DAILY_SCANS) {
+      if (inputRef.current) inputRef.current.value = "";
+      setPremiumOpen(true);
+      return;
+    }
     setTab("home");
     setError("");
     setLoading(true);
+    if (!isPremium) {
+      const nextCount = readScanCount() + 1;
+      writeScanCount(nextCount);
+      setScanCount(nextCount);
+    }
     const reader = new FileReader();
     reader.onload = (loadEvent) => {
       const dataUrl = loadEvent.target.result;
@@ -388,6 +492,10 @@ export default function Home() {
   const goToScan = () => {
     reset();
     setTab("home");
+    if (!isPremium && readScanCount() >= FREE_DAILY_SCANS) {
+      setPremiumOpen(true);
+      return;
+    }
     if (equipment.length > 0) requestAnimationFrame(() => inputRef.current?.click());
   };
 
@@ -395,6 +503,8 @@ export default function Home() {
     `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
 
   const hasEquipment = equipment.length > 0;
+  const scanRemaining = isPremium ? Infinity : Math.max(0, FREE_DAILY_SCANS - scanCount);
+  const scanBlocked = !isPremium && scanRemaining <= 0;
   const onHomeTab = tab === "home";
   const showHome = onHomeTab && !data && !loading;
   const showList = onHomeTab && data && !loading && !selectedRecipe;
@@ -436,17 +546,35 @@ export default function Home() {
             </div>
           </div>
 
-          <label className={`scan-card${hasEquipment ? "" : " locked"}`} aria-disabled={!hasEquipment}>
-            <span className="scan-icon" aria-hidden="true">+</span>
-            <span className="scan-card-copy">
-              <strong>Scanner mes ingrédients</strong>
-              <small>{hasEquipment ? "Photo ou galerie" : "Sélectionne d'abord ton matériel"}</small>
-            </span>
-            <span className="chevron" aria-hidden="true">›</span>
-            <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} disabled={!hasEquipment} />
-          </label>
+          {scanBlocked ? (
+            <button type="button" className="scan-card scan-card-premium" onClick={() => setPremiumOpen(true)}>
+              <span className="scan-icon" aria-hidden="true">✦</span>
+              <span className="scan-card-copy">
+                <strong>Limite quotidienne atteinte</strong>
+                <small>Passe à Premium pour des scans illimités</small>
+              </span>
+              <span className="chevron" aria-hidden="true">›</span>
+            </button>
+          ) : (
+            <label className={`scan-card${hasEquipment ? "" : " locked"}`} aria-disabled={!hasEquipment}>
+              <span className="scan-icon" aria-hidden="true">+</span>
+              <span className="scan-card-copy">
+                <strong>Scanner mes ingrédients</strong>
+                <small>{hasEquipment ? "Photo ou galerie" : "Sélectionne d'abord ton matériel"}</small>
+              </span>
+              <span className="chevron" aria-hidden="true">›</span>
+              <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} disabled={!hasEquipment} />
+            </label>
+          )}
           {!hasEquipment && (
             <p className="scan-hint" role="status">Choisis au moins un équipement ci-dessus pour débloquer le scan.</p>
+          )}
+          {hasEquipment && !scanBlocked && (
+            <p className="scan-hint" role="status">
+              {isPremium
+                ? "Scans illimités avec Premium."
+                : `Il te reste ${scanRemaining} scan${scanRemaining > 1 ? "s" : ""} aujourd'hui.`}
+            </p>
           )}
 
           <div className="stats-row">
@@ -563,6 +691,46 @@ export default function Home() {
             </div>
           )}
 
+          {selectedRecipe.shopping_suggestions?.length > 0 && (
+            <div className="premium-section">
+              <div className="section-heading"><span>Liste de courses maline</span><span className="muted-label premium-label">PREMIUM</span></div>
+              {isPremium ? (
+                <div className="shopping-list">
+                  {selectedRecipe.shopping_suggestions.map((suggestion) => (
+                    <div className="shopping-item" key={suggestion.name}>
+                      <span className="shopping-plus" aria-hidden="true">+</span>
+                      <span><strong>{suggestion.name}</strong><small>{suggestion.reason}</small></span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <button type="button" className="premium-lock" onClick={() => setPremiumOpen(true)}>
+                  <span className="premium-lock-icon" aria-hidden="true">✦</span>
+                  <span><strong>{selectedRecipe.shopping_suggestions.length} ingrédients pour sublimer ce plat</strong><small>Débloque la liste de courses maline avec Premium.</small></span>
+                  <span className="chevron" aria-hidden="true">›</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {selectedRecipe.chef_mode && (
+            <div className="premium-section">
+              <div className="section-heading"><span>Mode chef</span><span className="muted-label premium-label">PREMIUM</span></div>
+              {isPremium ? (
+                <div className="chef-mode">
+                  <div className="chef-mode-row"><span className="chef-mode-tag">ASTUCE</span><p>{selectedRecipe.chef_mode.variation}</p></div>
+                  <div className="chef-mode-row"><span className="chef-mode-tag">ACCORD</span><p>{selectedRecipe.chef_mode.pairing}</p></div>
+                </div>
+              ) : (
+                <button type="button" className="premium-lock" onClick={() => setPremiumOpen(true)}>
+                  <span className="premium-lock-icon" aria-hidden="true">✦</span>
+                  <span><strong>Version gastronomique + accord suggéré</strong><small>Passe en Mode chef avec Premium.</small></span>
+                  <span className="chevron" aria-hidden="true">›</span>
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="steps">
             <div className="section-heading"><span>Préparation</span><span className="muted-label">{selectedRecipe.steps.length} ÉTAPES</span></div>
             {selectedRecipe.steps.map((step, index) => {
@@ -610,6 +778,10 @@ export default function Home() {
           savings={savings}
           loading={user ? savingsLoading : false}
           user={user}
+          isPremium={isPremium}
+          monthlyGoal={monthlyGoal}
+          onSetGoal={saveGoal}
+          onUpgrade={() => setPremiumOpen(true)}
           onGoToScan={goToScan}
           onSignIn={() => setTab("account")}
         />
@@ -619,6 +791,7 @@ export default function Home() {
         <AccountView
           user={user}
           authLoading={authLoading}
+          isPremium={isPremium}
           totalSaved={totalSaved}
           mealsCount={savings.length}
           onSignIn={signInWithGoogle}
@@ -633,10 +806,11 @@ export default function Home() {
       {premiumOpen && (
         <div className="premium-modal" role="dialog" aria-modal="true" aria-labelledby="premium-modal-title" onClick={() => setPremiumOpen(false)}>
           <div className="premium-modal-card" onClick={(event) => event.stopPropagation()}>
-            <span className="premium-tag">PREMIUM</span>
-            <h2 id="premium-modal-title">Bientôt disponible</h2>
-            <p>Le paiement sécurisé arrive très vite. Tu seras parmi les premiers prévenus au lancement de RandomCook Premium.</p>
-            <button type="button" className="premium-button" onClick={() => setPremiumOpen(false)}>J&apos;ai hâte</button>
+            <span className="premium-tag">PREMIUM · 4,99 € / MOIS</span>
+            <h2 id="premium-modal-title">RandomCook Premium</h2>
+            <p>Scans illimités, suivi avancé des économies, listes de courses malines et Mode chef sur chaque recette.</p>
+            <button type="button" className="premium-button" onClick={activatePremium}>Activer l&apos;essai (démo)</button>
+            <button type="button" className="premium-modal-later" onClick={() => setPremiumOpen(false)}>Le paiement sécurisé arrive bientôt · plus tard</button>
           </div>
         </div>
       )}

@@ -34,6 +34,16 @@ const costBreakdownSchema = z.object({
   money_saved_estimate: z.number().min(0).max(300),
 });
 
+const shoppingSuggestionSchema = z.object({
+  name: z.string().min(1).max(60),
+  reason: z.string().min(1).max(110),
+});
+
+const chefModeSchema = z.object({
+  variation: z.string().min(1).max(240),
+  pairing: z.string().min(1).max(140),
+});
+
 const singleRecipeSchema = z.object({
   category: z.enum(["express", "normal", "long"]),
   cuisine_style: z.string().min(1).max(60),
@@ -44,6 +54,8 @@ const singleRecipeSchema = z.object({
   chef_technique: z.string().min(1).max(80),
   required_equipment: z.array(z.string().max(40)).max(6),
   steps: z.array(stepSchema).min(2).max(9),
+  shopping_suggestions: z.array(shoppingSuggestionSchema).min(1).max(4),
+  chef_mode: chefModeSchema,
 });
 
 const responseSchema = z.object({
@@ -88,6 +100,15 @@ Le but est de comparer le coût de la recette faite maison au prix du même plat
 - bought_cost : prix réaliste de CE plat équivalent acheté prêt à manger ou livré en France, pour le même nombre de portions (un plat livré coûte typiquement 2,5 à 4 fois le coût des ingrédients maison une fois main-d'œuvre, marge et livraison inclus). Reste crédible selon le type de plat.
 - money_saved_estimate : bought_cost moins home_cost, jamais négatif. C'est l'économie réelle en cuisinant soi-même.
 - Sois cohérent : plus la recette utilise d'ingrédients coûteux, plus home_cost et bought_cost augmentent. Ne gonfle pas artificiellement l'économie.
+
+LISTE DE COURSES MALINE (shopping_suggestions)
+- Propose de 1 à 4 ingrédients complémentaires, PEU coûteux et faciles à trouver, que l'utilisateur pourrait acheter pour compléter ou sublimer CE plat précis (un aromate, un fromage, une herbe fraîche, une garniture).
+- Ne répète jamais un ingrédient déjà détecté sur la photo. Chaque suggestion doit être vraiment pertinente pour la recette.
+- Pour chaque suggestion : name (l'ingrédient) et reason (en quoi il améliore le plat, en une phrase courte).
+
+MODE CHEF (chef_mode)
+- variation : une astuce concrète de chef pour transformer ce plat simple en version plus gastronomique (technique de dressage, cuisson plus fine, touche finale), en 1 ou 2 phrases, réalisable avec le matériel disponible.
+- pairing : un accord suggéré cohérent avec le plat (un vin, une boisson, un accompagnement ou une salade), en une phrase courte.
 
 MINUTEURS DE CUISSON
 - is_cooking_time vaut true UNIQUEMENT pour une cuisson ou une chauffe réelle qui demande de surveiller le temps : cuire des pâtes dans l'eau bouillante, saisir à la poêle, mijoter, cuire au four, faire réduire, faire bouillir, etc.

@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 const CATEGORY_LABEL = { express: "Express", normal: "Équilibrée", long: "Gourmande" };
 
 function euro(value) {
@@ -14,10 +16,24 @@ function formatDate(iso) {
   }
 }
 
-export default function SavingsView({ savings, loading, user, onGoToScan, onSignIn }) {
+function currentMonthLabel() {
+  return new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+}
+
+export default function SavingsView({ savings, loading, user, isPremium, monthlyGoal, onSetGoal, onUpgrade, onGoToScan, onSignIn }) {
+  const [goalDraft, setGoalDraft] = useState("");
+
   const total = savings.reduce((sum, item) => sum + Number(item.saved || 0), 0);
   const meals = savings.length;
   const average = meals > 0 ? total / meals : 0;
+
+  const now = new Date();
+  const monthItems = savings.filter((item) => {
+    const date = new Date(item.created_at);
+    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  });
+  const monthTotal = monthItems.reduce((sum, item) => sum + Number(item.saved || 0), 0);
+  const goalProgress = monthlyGoal > 0 ? Math.min(100, Math.round((monthTotal / monthlyGoal) * 100)) : 0;
 
   return (
     <section className="savings-screen" aria-labelledby="savings-title">
@@ -39,6 +55,62 @@ export default function SavingsView({ savings, loading, user, onGoToScan, onSign
       {!user && (
         <button type="button" className="savings-signin-note" onClick={onSignIn}>
           <span><strong>Connecte-toi pour synchroniser</strong><small>Tes économies sont pour l&apos;instant gardées sur cet appareil.</small></span>
+          <span className="chevron" aria-hidden="true">›</span>
+        </button>
+      )}
+
+      <div className="section-heading" style={{ marginTop: 28 }}>
+        <span>Suivi avancé</span><span className="muted-label premium-label">PREMIUM</span>
+      </div>
+
+      {isPremium ? (
+        <div className="advanced-savings">
+          <div className="month-head">
+            <span className="month-name">{currentMonthLabel()}</span>
+            <strong>{euro(monthTotal)}</strong>
+          </div>
+          <div className="month-sub"><span>{monthItems.length} plat{monthItems.length > 1 ? "s" : ""} ce mois-ci</span></div>
+
+          <div className="goal-block">
+            <div className="goal-head">
+              <span>Objectif mensuel</span>
+              <strong>{monthlyGoal > 0 ? euro(monthlyGoal) : "Non défini"}</strong>
+            </div>
+            {monthlyGoal > 0 && (
+              <>
+                <div className="goal-bar" role="progressbar" aria-valuenow={goalProgress} aria-valuemin={0} aria-valuemax={100}>
+                  <span style={{ width: `${goalProgress}%` }} />
+                </div>
+                <span className="goal-progress">{goalProgress}% atteint · reste {euro(Math.max(0, monthlyGoal - monthTotal))}</span>
+              </>
+            )}
+            <form
+              className="goal-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (goalDraft !== "") {
+                  onSetGoal(goalDraft);
+                  setGoalDraft("");
+                }
+              }}
+            >
+              <input
+                type="number"
+                min="0"
+                inputMode="numeric"
+                placeholder={monthlyGoal > 0 ? "Modifier l'objectif (€)" : "Fixer un objectif (€)"}
+                value={goalDraft}
+                onChange={(event) => setGoalDraft(event.target.value)}
+                aria-label="Objectif mensuel en euros"
+              />
+              <button type="submit">OK</button>
+            </form>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="premium-lock" onClick={onUpgrade}>
+          <span className="premium-lock-icon" aria-hidden="true">✦</span>
+          <span><strong>Statistiques mensuelles &amp; objectifs</strong><small>Suis tes économies mois par mois et fixe-toi un objectif avec Premium.</small></span>
           <span className="chevron" aria-hidden="true">›</span>
         </button>
       )}
