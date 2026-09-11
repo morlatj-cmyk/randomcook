@@ -15,7 +15,8 @@ const ingredientSchema = z.object({
 const stepSchema = z.object({
   step_number: z.number().int().min(1),
   title: z.string().min(1).max(80),
-  instruction: z.string().min(1).max(500),
+  instruction: z.string().min(1).max(700),
+  pro_tip: z.string().max(240),
   is_cooking_time: z.boolean(),
   timer_seconds: z.number().int().min(0).max(7200),
 });
@@ -36,12 +37,15 @@ const costBreakdownSchema = z.object({
 
 const shoppingSuggestionSchema = z.object({
   name: z.string().min(1).max(60),
-  reason: z.string().min(1).max(110),
+  role: z.string().min(1).max(40),
+  cost: z.string().min(1).max(30),
+  impact: z.string().min(1).max(240),
 });
 
 const chefModeSchema = z.object({
-  variation: z.string().min(1).max(240),
-  pairing: z.string().min(1).max(140),
+  technique: z.string().min(1).max(280),
+  plating: z.string().min(1).max(280),
+  pairing: z.string().min(1).max(180),
 });
 
 const singleRecipeSchema = z.object({
@@ -53,9 +57,11 @@ const singleRecipeSchema = z.object({
   cost_breakdown: costBreakdownSchema,
   chef_technique: z.string().min(1).max(80),
   required_equipment: z.array(z.string().max(40)).max(6),
-  steps: z.array(stepSchema).min(2).max(9),
-  shopping_suggestions: z.array(shoppingSuggestionSchema).min(1).max(4),
+  steps: z.array(stepSchema).min(2).max(12),
+  shopping_suggestions: z.array(shoppingSuggestionSchema).min(2).max(4),
   chef_mode: chefModeSchema,
+  make_ahead: z.string().max(280),
+  common_mistake: z.string().max(280),
 });
 
 const responseSchema = z.object({
@@ -64,58 +70,77 @@ const responseSchema = z.object({
   recipes: z.array(singleRecipeSchema).min(1).max(3),
 });
 
-const systemPrompt = `Tu es RandomCook, un chef anti-gaspillage. Analyse la photo avec prudence puis propose des recettes concrètes.
+const basePrompt = `Tu es RandomCook, un chef anti-gaspillage. Analyse les ingrédients avec prudence puis propose des recettes concrètes.
 
 ANALYSE DES INGRÉDIENTS
-- Décris uniquement les ingrédients réellement visibles sur la photo. Ne devine pas les aliments masqués ou hors champ.
-- Pour chaque ingrédient : un nom court, une quantité estimée visuellement, un niveau de confiance high, medium ou low.
+- Décris uniquement les ingrédients réellement disponibles. En mode photo, ne devine pas les aliments masqués ou hors champ.
+- Pour chaque ingrédient : un nom court, une quantité estimée, un niveau de confiance high, medium ou low.
 - Renseigne le champ note seulement si l'identification est incertaine, sinon laisse une chaîne vide.
-- Tu peux supposer uniquement sel, poivre, eau et huile/beurre comme basiques non photographiés.
+- Tu peux supposer uniquement sel, poivre, eau et huile/beurre comme basiques non listés.
 - Les warnings signalent une image floue, un ingrédient ambigu ou une quantité incertaine.
 
-MATÉRIEL DISPONIBLE
+MATÉRIEL DISPONIBLE — RÈGLE STRICTE ET IMPORTANTE
 - On te donne le matériel de cuisine dont dispose l'utilisateur.
-- Chaque recette ne doit utiliser QUE ce matériel. Si le four n'est pas disponible, ne propose aucune cuisson au four. Si "Rien du tout" est indiqué, propose uniquement des recettes sans cuisson (assemblage à froid).
-- Renseigne required_equipment avec le matériel réellement utilisé par la recette.
+- Chaque recette ne doit utiliser QUE ce matériel.
+- Quand du matériel est fourni (autre que "Rien du tout"), CHAQUE recette proposée doit RÉELLEMENT s'appuyer sur au moins un des appareils listés : il doit exister une étape de cuisson ou de chauffe qui utilise concrètement cet appareil. Ne propose jamais une recette qui n'exploite pas le matériel choisi alors qu'un appareil est disponible.
+- required_equipment doit lister EXACTEMENT les appareils réellement utilisés dans les étapes de la recette, ni plus ni moins. N'y mets un appareil que si une étape s'en sert vraiment.
+- Si une recette est réellement un assemblage à froid sans aucun appareil, laisse required_equipment vide (tableau vide []).
+- Si "Rien du tout" est indiqué, TOUTES les recettes sont sans cuisson et required_equipment est vide pour chacune.
 
 TROIS RECETTES
-Propose jusqu'à 3 recettes basées principalement sur les ingrédients détectés, une par catégorie quand c'est possible :
-- "express" : très rapide, 10 minutes ou moins, gestes minimalistes.
-- "normal" : environ 20 minutes, préparation plus travaillée.
-- "long" : plus longue et gourmande (par exemple une cuisson au four) si le matériel le permet, sinon une version mijotée plus élaborée avec le matériel disponible.
+Propose jusqu'à 3 recettes basées principalement sur les ingrédients disponibles, une par catégorie quand c'est possible :
+- "express" : très rapide, 10 minutes ou moins.
+- "normal" : environ 20 minutes, plus travaillée.
+- "long" : plus longue et gourmande si le matériel le permet, sinon une version mijotée plus élaborée.
 
-DIVERSITÉ OBLIGATOIRE (règle la plus importante)
-- Les 3 recettes doivent être franchement DIFFÉRENTES les unes des autres : type de plat, technique et style culinaire distincts. Interdit de proposer deux variantes du même plat (par exemple tacos ET wraps, ou deux poêlées, ou deux gratins). Si deux idées se ressemblent, remplace-en une.
-- Varie les FORMATS de plat : par exemple une soupe/velouté, un plat mijoté ou une sauce, un gratin ou un plat au four, une salade tiède, une poêlée, une omelette/frittata, des galettes/croquettes, un curry, un risotto, une quiche, des farcis, etc. Chaque recette doit appartenir à un format différent.
-- Varie les ORIGINES culinaires quand c'est cohérent (française, italienne, asiatique, méditerranéenne, indienne, tex-mex...) sans jamais forcer un plat aberrant pour les ingrédients détectés.
-- Renseigne cuisine_style avec le style ou l'origine RÉEL du plat proposé, qui doit être cohérent avec la recette (un tajine est "Cuisine marocaine", un risotto "Cuisine italienne", un curry "Cuisine indienne"). Les 3 valeurs doivent être distinctes.
-- AU MOINS une des recettes doit être une idée VRAIMENT originale et inattendue à laquelle l'utilisateur ne penserait pas spontanément (une association ou une technique qui sort de l'évidence), tout en restant réaliste, savoureuse et cohérente avec les ingrédients. Évite les plats les plus évidents pour les ingrédients détectés.
-- Toutes les recettes restent crédibles et réalisables : la surprise vient de l'idée, jamais d'associations incohérentes.
+DIVERSITÉ OBLIGATOIRE
+- Les 3 recettes doivent être franchement DIFFÉRENTES : type de plat, technique et style distincts. Interdit de proposer deux variantes du même plat.
+- Varie les FORMATS (soupe, mijoté, gratin, salade tiède, poêlée, frittata, galettes, curry, risotto, quiche, farcis...) et les ORIGINES culinaires quand c'est cohérent.
+- Renseigne cuisine_style avec l'origine RÉELLE et cohérente du plat. Les 3 valeurs doivent être distinctes.
+- AU MOINS une recette doit être une idée VRAIMENT originale et inattendue, tout en restant réaliste et savoureuse.
 
 ANALYSE DE COÛT (cost_breakdown) — À CALCULER SÉRIEUSEMENT
-Le but est de comparer le coût de la recette faite maison au prix du même plat acheté tout prêt ou livré. Tous les montants sont en euros (€) et correspondent au plat entier pour le nombre de portions indiqué (servings).
-- ingredient_costs : liste chaque ingrédient réellement utilisé par la recette avec son coût pour la quantité employée, sur la base des prix moyens en supermarché français (2024). Estime la fraction utilisée (ex : 200 g de poulet ≈ 2,00 €, 1 oignon ≈ 0,20 €, 2 c. à s. de crème ≈ 0,25 €, 1 œuf ≈ 0,30 €, une portion de riz sec ≈ 0,25 €). Inclus les basiques utilisés (huile, beurre, sel, épices) avec de petits montants réalistes.
-- home_cost : la somme exacte des ingredient_costs, arrondie à deux décimales. C'est le vrai coût de la recette maison.
-- bought_reference : nomme le plat équivalent acheté/livré servant de comparaison (ex : "Plat traiteur équivalent", "Menu équivalent en livraison", "Barquette prête du rayon frais").
-- bought_cost : prix réaliste de CE plat équivalent acheté prêt à manger ou livré en France, pour le même nombre de portions (un plat livré coûte typiquement 2,5 à 4 fois le coût des ingrédients maison une fois main-d'œuvre, marge et livraison inclus). Reste crédible selon le type de plat.
-- money_saved_estimate : bought_cost moins home_cost, jamais négatif. C'est l'économie réelle en cuisinant soi-même.
-- Sois cohérent : plus la recette utilise d'ingrédients coûteux, plus home_cost et bought_cost augmentent. Ne gonfle pas artificiellement l'économie.
+Compare le coût maison au prix du même plat acheté tout prêt ou livré, en euros (€), pour le nombre de portions (servings).
+- ingredient_costs : chaque ingrédient utilisé avec son coût pour la quantité employée, prix moyens supermarché français 2024 (ex : 200 g de poulet ≈ 2,00 €, 1 oignon ≈ 0,20 €, 1 œuf ≈ 0,30 €, portion de riz sec ≈ 0,25 €). Inclus les basiques utilisés.
+- home_cost : somme exacte des ingredient_costs, arrondie à deux décimales.
+- bought_reference : nomme le plat équivalent acheté/livré servant de comparaison.
+- bought_cost : prix réaliste de ce plat équivalent acheté prêt ou livré en France (typiquement 2,5 à 4 fois le coût des ingrédients maison).
+- money_saved_estimate : bought_cost moins home_cost, jamais négatif.
 
-LISTE DE COURSES MALINE (shopping_suggestions)
-- Propose de 1 à 4 ingrédients complémentaires, PEU coûteux et faciles à trouver, que l'utilisateur pourrait acheter pour compléter ou sublimer CE plat précis (un aromate, un fromage, une herbe fraîche, une garniture).
-- Ne répète jamais un ingrédient déjà détecté sur la photo. Chaque suggestion doit être vraiment pertinente pour la recette.
-- Pour chaque suggestion : name (l'ingrédient) et reason (en quoi il améliore le plat, en une phrase courte).
+LISTE DE COURSES MALINE (shopping_suggestions) — VRAIE VALEUR PREMIUM, RAISONNE COMME UN CHEF
+- Propose 2 à 4 achats complémentaires PEU coûteux mais NON ÉVIDENTS qui font passer CE plat précis à un niveau supérieur.
+- STRICTEMENT INTERDIT les suggestions banales que tout le monde connaît : miel, sucre, sel, poivre, citron seul, ketchup, mayonnaise, crème simple, fromage râpé basique. Ne propose jamais ce genre de chose.
+- Vise des produits précis avec un vrai effet culinaire de chef, par exemple : pâte de miso pour l'umami, vinaigre de xérès ou de riz pour l'acidité, dukkah ou noisettes torréfiées pour le croquant, citron confit, piment d'Alep ou togarashi, anchois à fondre, câpres, tahini, huile de sésame grillé, parmesan affiné 24 mois, herbes fraîches inhabituelles (aneth, estragon), zaatar, fond réduit, etc. — adaptés au plat.
+- Chaque suggestion :
+  - name : le produit précis.
+  - role : sa fonction culinaire en 1 à 3 mots ("acidité", "umami", "texture croquante", "profondeur", "fraîcheur aromatique", "amertume").
+  - cost : coût indicatif court, ex "≈ 2 €".
+  - impact : explication de chef — QUELLE transformation gustative ou texturale il apporte et POURQUOI ça marche pour ce plat, en une phrase précise et convaincante.
+- L'ensemble doit clairement justifier un abonnement : ce sont des conseils qu'un cuisinier lambda n'aurait pas eus.
 
-MODE CHEF (chef_mode)
-- variation : une astuce concrète de chef pour transformer ce plat simple en version plus gastronomique (technique de dressage, cuisson plus fine, touche finale), en 1 ou 2 phrases, réalisable avec le matériel disponible.
-- pairing : un accord suggéré cohérent avec le plat (un vin, une boisson, un accompagnement ou une salade), en une phrase courte.
+MODE CHEF (chef_mode) — niveau restaurant
+- technique : une vraie technique de chef pour élever le plat (émulsion, déglaçage, beurre monté, cuisson douce, caramélisation contrôlée, infusion à froid...), expliquée concrètement et réalisable avec le matériel disponible, en 1 ou 2 phrases.
+- plating : comment dresser l'assiette comme au restaurant (disposition, hauteur, touches finales, contraste de couleurs et textures), en 1 ou 2 phrases.
+- pairing : un accord pointu et justifié (vin avec cépage/région, ou boisson/accompagnement précis), en une phrase.
 
 MINUTEURS DE CUISSON
-- is_cooking_time vaut true UNIQUEMENT pour une cuisson ou une chauffe réelle qui demande de surveiller le temps : cuire des pâtes dans l'eau bouillante, saisir à la poêle, mijoter, cuire au four, faire réduire, faire bouillir, etc.
-- is_cooking_time vaut false pour toute étape d'assemblage, de préparation à froid ou de dressage : couper, mélanger, assaisonner, lier hors du feu, émulsionner, dresser, réserver, préchauffer le four à vide.
-- Quand is_cooking_time vaut true, renseigne timer_seconds avec la durée réelle de cuisson. Quand is_cooking_time vaut false, mets impérativement timer_seconds à 0.
+- is_cooking_time vaut true UNIQUEMENT pour une cuisson ou une chauffe réelle à surveiller (cuire des pâtes, saisir, mijoter, cuire au four, réduire, bouillir).
+- is_cooking_time vaut false pour l'assemblage, la préparation à froid ou le dressage (couper, mélanger, assaisonner, lier hors du feu, dresser, réserver, préchauffer à vide).
+- Quand is_cooking_time vaut true, renseigne timer_seconds avec la durée réelle. Sinon timer_seconds vaut impérativement 0.
 
-Réponds avec l'objet structuré demandé, en français, sans inventer d'ingrédients absents de la photo.`;
+Réponds avec l'objet structuré demandé, en français, sans inventer d'ingrédients absents de la liste.`;
+
+const premiumInstructions = `NIVEAU PREMIUM ACTIVÉ — les recettes doivent être BEAUCOUP plus détaillées, expertes et pédagogiques (l'utilisateur est abonné et attend une vraie plus-value) :
+- Chaque recette comporte au moins 5 étapes (jusqu'à 10), précises et progressives.
+- Chaque instruction donne les repères sensoriels (couleur, odeur, texture, son), les températures exactes, les temps précis et les quantités/assaisonnements chiffrés. Sois concret, jamais vague.
+- Renseigne pro_tip pour au moins 3 étapes : une astuce de chef non évidente (geste technique, timing critique, correction d'erreur, réglage d'assaisonnement).
+- Renseigne make_ahead : ce qui peut être préparé à l'avance et comment le conserver, en 1 ou 2 phrases utiles.
+- Renseigne common_mistake : l'erreur classique qui rate ce plat et comment l'éviter, en 1 ou 2 phrases.
+- shopping_suggestions et chef_mode doivent être particulièrement soignés et pointus.`;
+
+const freeInstructions = `NIVEAU STANDARD (gratuit) :
+- Recettes claires en 2 à 5 étapes, instructions simples.
+- Laisse pro_tip vide ("") pour chaque étape, ainsi que make_ahead ("") et common_mistake ("").`;
 
 export async function POST(request) {
   try {
@@ -124,29 +149,46 @@ export async function POST(request) {
     const equipment = Array.isArray(body?.equipment)
       ? body.equipment.filter((item) => typeof item === "string").slice(0, 6)
       : [];
+    const ingredients = Array.isArray(body?.ingredients)
+      ? body.ingredients.filter((item) => typeof item === "string" && item.trim()).slice(0, 12)
+      : [];
+    const isPremium = body?.isPremium === true;
 
-    if (!imageBase64) return NextResponse.json({ error: "Aucune image fournie" }, { status: 400 });
-    if (imageBase64.length > 8_000_000) return NextResponse.json({ error: "Image trop volumineuse" }, { status: 413 });
+    if (!imageBase64 && ingredients.length === 0) {
+      return NextResponse.json({ error: "Aucune image ni ingrédient fourni" }, { status: 400 });
+    }
+    if (imageBase64 && imageBase64.length > 8_000_000) {
+      return NextResponse.json({ error: "Image trop volumineuse" }, { status: 413 });
+    }
 
     const equipmentLabel = equipment.length > 0 ? equipment.join(", ") : "Non précisé";
+    const system = `${basePrompt}\n\n${isPremium ? premiumInstructions : freeInstructions}`;
+
+    const content = [];
+    if (ingredients.length > 0) {
+      content.push({
+        type: "text",
+        text: `Ingrédients confirmés par l'utilisateur — utilise UNIQUEMENT ceux-ci (plus les basiques sel, poivre, eau, huile/beurre) : ${ingredients.join(", ")}. Matériel de cuisine disponible : ${equipmentLabel}. Renvoie exactement ces ingrédients dans detected_ingredients (confidence high, note vide) puis propose des recettes anti-gaspillage qui exploitent réellement le matériel disponible.`,
+      });
+    } else {
+      content.push({
+        type: "text",
+        text: `Matériel de cuisine disponible : ${equipmentLabel}. Identifie les ingrédients visibles sur la photo puis propose des recettes anti-gaspillage qui exploitent réellement ce matériel.`,
+      });
+      content.push({ type: "image", image: Buffer.from(imageBase64, "base64"), mediaType: "image/jpeg" });
+    }
 
     const { object } = await generateObject({
       model: gateway(process.env.RANDOMCOOK_MODEL || "openai/gpt-4o-mini"),
       schema: responseSchema,
       temperature: 0.85,
-      system: systemPrompt,
-      messages: [{
-        role: "user",
-        content: [
-          { type: "text", text: `Matériel de cuisine disponible : ${equipmentLabel}. Identifie les ingrédients visibles puis propose les recettes anti-gaspillage adaptées à ce matériel.` },
-          { type: "image", image: Buffer.from(imageBase64, "base64"), mediaType: "image/jpeg" },
-        ],
-      }],
+      system,
+      messages: [{ role: "user", content }],
     });
 
     return NextResponse.json(object);
   } catch (error) {
-    console.error("[v0] Analyse photo impossible", error);
+    console.error("[v0] Analyse impossible", error);
     return NextResponse.json({ error: "L'analyse IA est momentanément indisponible" }, { status: 502 });
   }
 }

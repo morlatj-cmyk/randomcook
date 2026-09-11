@@ -75,17 +75,20 @@ const fallbackData = {
       chef_technique: "Émulsion résiduelle",
       required_equipment: ["Poêle"],
       steps: [
-        { step_number: 1, title: "Saisir le riz", instruction: "Chauffe un filet d'huile, ajoute le riz froid et laisse-le tiédir 2 minutes.", is_cooking_time: true, timer_seconds: 120 },
-        { step_number: 2, title: "Lier hors du feu", instruction: "Hors du feu, ajoute les jaunes et le parmesan, remue vivement jusqu'à une sauce brillante.", is_cooking_time: false, timer_seconds: 0 },
+        { step_number: 1, title: "Saisir le riz", instruction: "Chauffe un filet d'huile, ajoute le riz froid et laisse-le tiédir 2 minutes.", pro_tip: "", is_cooking_time: true, timer_seconds: 120 },
+        { step_number: 2, title: "Lier hors du feu", instruction: "Hors du feu, ajoute les jaunes et le parmesan, remue vivement jusqu'à une sauce brillante.", pro_tip: "", is_cooking_time: false, timer_seconds: 0 },
       ],
       shopping_suggestions: [
-        { name: "Ciboulette fraîche", reason: "Une touche herbacée qui réveille le riz crémeux." },
-        { name: "Petits pois", reason: "Un peu de couleur et de douceur pour équilibrer." },
+        { name: "Pâte de miso blanc", role: "umami", cost: "≈ 3 €", impact: "Une pointe de miso fondue dans le riz apporte une profondeur salée qui fait croire à un long mijotage." },
+        { name: "Vinaigre de riz", role: "acidité", cost: "≈ 2 €", impact: "Quelques gouttes en finition réveillent le gras des jaunes et allègent la sensation en bouche." },
       ],
       chef_mode: {
-        variation: "Dresse en quenelle avec deux cuillères et râpe un voile de parmesan au dernier moment pour un fini brillant.",
-        pairing: "Un verre de vin blanc sec bien frais, type pinot blanc.",
+        technique: "Termine hors du feu en fouettant une noisette de beurre froid pour monter la liaison et obtenir un riz nappant et brillant.",
+        plating: "Dresse en dôme à l'emporte-pièce, creuse un léger puits et râpe le parmesan au-dessus au dernier moment.",
+        pairing: "Un blanc sec tendu, type chablis ou pinot blanc d'Alsace bien frais.",
       },
+      make_ahead: "Le riz peut être cuit la veille et conservé au frais ; la liaison aux jaunes se fait uniquement au moment de servir.",
+      common_mistake: "Ajouter les jaunes sur feu vif : ils coagulent et grainent. Toujours lier hors du feu.",
     },
     {
       category: "normal",
@@ -109,18 +112,21 @@ const fallbackData = {
       chef_technique: "Réaction de Maillard",
       required_equipment: ["Poêle"],
       steps: [
-        { step_number: 1, title: "Croûte de riz", instruction: "Étale le riz dans une poêle chaude et laisse une croûte se former sans remuer, 4 minutes.", is_cooking_time: true, timer_seconds: 240 },
-        { step_number: 2, title: "Assaisonner", instruction: "Ajoute le parmesan, mélange puis réserve au chaud.", is_cooking_time: false, timer_seconds: 0 },
-        { step_number: 3, title: "Œuf poêlé", instruction: "Cuis un œuf au plat et pose-le sur le riz. Poivre généreusement.", is_cooking_time: true, timer_seconds: 180 },
+        { step_number: 1, title: "Croûte de riz", instruction: "Étale le riz dans une poêle chaude et laisse une croûte se former sans remuer, 4 minutes.", pro_tip: "", is_cooking_time: true, timer_seconds: 240 },
+        { step_number: 2, title: "Assaisonner", instruction: "Ajoute le parmesan, mélange puis réserve au chaud.", pro_tip: "", is_cooking_time: false, timer_seconds: 0 },
+        { step_number: 3, title: "Œuf poêlé", instruction: "Cuis un œuf au plat et pose-le sur le riz. Poivre généreusement.", pro_tip: "", is_cooking_time: true, timer_seconds: 180 },
       ],
       shopping_suggestions: [
-        { name: "Sauce soja", reason: "Apporte le côté umami typique d'un riz sauté." },
-        { name: "Oignon nouveau", reason: "Du croquant et de la fraîcheur en finition." },
+        { name: "Huile de sésame grillé", role: "profondeur", cost: "≈ 3 €", impact: "Un filet hors du feu diffuse un parfum torréfié qui signe instantanément un vrai riz sauté." },
+        { name: "Togarashi", role: "texture croquante", cost: "≈ 2 €", impact: "Ce mélange japonais apporte piquant et graines croustillantes en contraste avec l'œuf coulant." },
       ],
       chef_mode: {
-        variation: "Fais sauter le riz par petites quantités à feu vif pour qu'il reste bien détaché et légèrement croustillant.",
-        pairing: "Une bière blonde légère ou un thé vert glacé.",
+        technique: "Fais sauter le riz par petites quantités à feu très vif pour qu'il reste détaché et légèrement croustillant, façon wok.",
+        plating: "Monte le riz en dôme, dépose l'œuf au sommet et laisse le jaune couler à la découpe pour l'effet visuel.",
+        pairing: "Une bière blonde légère bien fraîche ou un thé vert glacé non sucré.",
       },
+      make_ahead: "Le riz se saute idéalement froid : prépare-le la veille, l'humidité en moins garantit le croustillant.",
+      common_mistake: "Remuer sans arrêt : le riz ne caramélise pas. Laisse-le immobile pour former la croûte.",
     },
     {
       category: "long",
@@ -144,18 +150,21 @@ const fallbackData = {
       chef_technique: "Gratinage",
       required_equipment: ["Four"],
       steps: [
-        { step_number: 1, title: "Préchauffer", instruction: "Préchauffe le four à 200°C.", is_cooking_time: false, timer_seconds: 0 },
-        { step_number: 2, title: "Monter le plat", instruction: "Mélange le riz, les jaunes et le parmesan, verse dans un plat et lisse la surface.", is_cooking_time: false, timer_seconds: 0 },
-        { step_number: 3, title: "Gratiner", instruction: "Enfourne 25 minutes jusqu'à une belle croûte dorée.", is_cooking_time: true, timer_seconds: 1500 },
+        { step_number: 1, title: "Préchauffer", instruction: "Préchauffe le four à 200°C.", pro_tip: "", is_cooking_time: false, timer_seconds: 0 },
+        { step_number: 2, title: "Monter le plat", instruction: "Mélange le riz, les jaunes et le parmesan, verse dans un plat et lisse la surface.", pro_tip: "", is_cooking_time: false, timer_seconds: 0 },
+        { step_number: 3, title: "Gratiner", instruction: "Enfourne 25 minutes jusqu'à une belle croûte dorée.", pro_tip: "", is_cooking_time: true, timer_seconds: 1500 },
       ],
       shopping_suggestions: [
-        { name: "Gruyère râpé", reason: "Pour une croûte encore plus gourmande et filante." },
-        { name: "Muscade", reason: "Une pincée qui parfume subtilement le gratin." },
+        { name: "Chapelure panko", role: "texture croquante", cost: "≈ 2 €", impact: "Parsemée sur le dessus, elle crée une croûte nettement plus croustillante que le fromage seul." },
+        { name: "Zestes de citron confit", role: "fraîcheur aromatique", cost: "≈ 3 €", impact: "Quelques éclats coupent la richesse du gratin et apportent une touche parfumée inattendue." },
       ],
       chef_mode: {
-        variation: "Termine 2 minutes sous le gril pour une croûte dorée irrégulière et croustillante, puis laisse reposer avant de servir.",
+        technique: "Termine 2 minutes sous le gril pour une croûte irrégulière et bien dorée, puis laisse reposer 5 minutes pour que le cœur se tienne à la découpe.",
+        plating: "Sers une part nette à l'aide d'une spatule, croûte vers le haut, sur assiette chaude avec un trait d'huile.",
         pairing: "Un rouge léger servi frais, type gamay, et une salade verte acidulée.",
       },
+      make_ahead: "Le plat peut être monté à l'avance et conservé au frais, puis enfourné au dernier moment.",
+      common_mistake: "Servir le gratin brûlant à la sortie du four : il s'effondre. Laisse-le reposer avant de couper.",
     },
   ],
 };
@@ -180,6 +189,8 @@ export default function Home() {
   const [equipment, setEquipment] = useState([]);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
+  const [selectedIngredients, setSelectedIngredients] = useState([]);
+  const [regenerating, setRegenerating] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [error, setError] = useState("");
   const [activeTimers, setActiveTimers] = useState({});
@@ -353,16 +364,48 @@ export default function Home() {
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64, equipment }),
+        body: JSON.stringify({ imageBase64, equipment, isPremium }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Analyse impossible");
       setData(payload);
+      setSelectedIngredients((payload.detected_ingredients || []).map((item) => item.name));
     } catch {
       setError("L'analyse n'a pas abouti. Des idées de secours sont prêtes à cuisiner.");
       setData(fallbackData);
+      setSelectedIngredients(fallbackData.detected_ingredients.map((item) => item.name));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleIngredient = (name) =>
+    setSelectedIngredients((previous) =>
+      previous.includes(name) ? previous.filter((item) => item !== name) : [...previous, name]
+    );
+
+  const regenerateRecipes = async () => {
+    if (selectedIngredients.length === 0 || regenerating) return;
+    setRegenerating(true);
+    setError("");
+    try {
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ingredients: selectedIngredients, equipment, isPremium }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Régénération impossible");
+      setData((previous) => ({
+        ...previous,
+        recipes: payload.recipes,
+        warnings: payload.warnings?.length ? payload.warnings : previous?.warnings || [],
+      }));
+      setSelectedRecipe(null);
+    } catch {
+      setError("Impossible de régénérer les recettes. Réessaie dans un instant.");
+    } finally {
+      setRegenerating(false);
     }
   };
 
@@ -448,6 +491,8 @@ export default function Home() {
 
   const reset = () => {
     setData(null);
+    setSelectedIngredients([]);
+    setRegenerating(false);
     setSelectedRecipe(null);
     setError("");
     setActiveTimers({});
@@ -604,15 +649,54 @@ export default function Home() {
           </div>
 
           <div className="ingredient-block">
-            <div className="section-heading"><span>Ingrédients détectés</span><span className="muted-label">{data.detected_ingredients.length} ÉLÉMENTS</span></div>
-            <div className="ingredient-list">
-              {data.detected_ingredients.map((ingredient) => (
-                <div className="ingredient-item" key={ingredient.name}>
-                  <span><strong>{ingredient.name}</strong><small>{ingredient.quantity}{ingredient.note ? ` · ${ingredient.note}` : ""}</small></span>
-                  <em className={`confidence ${ingredient.confidence}`}>{ingredient.confidence === "high" ? "Sûr" : ingredient.confidence === "medium" ? "Probable" : "À vérifier"}</em>
-                </div>
-              ))}
+            <div className="section-heading">
+              <span>Ingrédients détectés</span>
+              <button
+                type="button"
+                className="ingredient-selectall"
+                onClick={() =>
+                  setSelectedIngredients(
+                    selectedIngredients.length === data.detected_ingredients.length
+                      ? []
+                      : data.detected_ingredients.map((item) => item.name)
+                  )
+                }
+              >
+                {selectedIngredients.length === data.detected_ingredients.length ? "Tout retirer" : "Tout utiliser"}
+              </button>
             </div>
+            <p className="ingredient-help">Touche un ingrédient pour l&apos;inclure ou l&apos;exclure, puis régénère tes recettes.</p>
+            <div className="ingredient-list">
+              {data.detected_ingredients.map((ingredient) => {
+                const active = selectedIngredients.includes(ingredient.name);
+                return (
+                  <button
+                    type="button"
+                    key={ingredient.name}
+                    className={`ingredient-item selectable${active ? " selected" : ""}`}
+                    aria-pressed={active}
+                    onClick={() => toggleIngredient(ingredient.name)}
+                  >
+                    <span className="ingredient-check" aria-hidden="true">{active ? "✓" : ""}</span>
+                    <span className="ingredient-body"><strong>{ingredient.name}</strong><small>{ingredient.quantity}{ingredient.note ? ` · ${ingredient.note}` : ""}</small></span>
+                    <em className={`confidence ${ingredient.confidence}`}>{ingredient.confidence === "high" ? "Sûr" : ingredient.confidence === "medium" ? "Probable" : "À vérifier"}</em>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              className="regen-button"
+              onClick={regenerateRecipes}
+              disabled={selectedIngredients.length === 0 || regenerating}
+            >
+              {regenerating
+                ? "Régénération en cours…"
+                : `Régénérer les recettes · ${selectedIngredients.length} ingrédient${selectedIngredients.length > 1 ? "s" : ""}`}
+            </button>
+            {selectedIngredients.length === 0 && (
+              <p className="scan-hint" role="status">Sélectionne au moins un ingrédient pour régénérer.</p>
+            )}
             {data.warnings?.length > 0 && (
               <div className="analysis-notice" role="status">
                 <strong>À vérifier</strong>
@@ -636,7 +720,7 @@ export default function Home() {
                   <strong className="recipe-choice-title">{item.recipe_title}</strong>
                   <p>{item.subtitle}</p>
                   <div className="recipe-choice-foot">
-                    <span>{item.required_equipment?.length > 0 ? item.required_equipment.join(" · ") : "Sans cuisson"}</span>
+                    <span>{item.required_equipment?.length > 0 ? item.required_equipment.join(" · ") : "Aucun matériel requis"}</span>
                     {saved != null && <span className="recipe-choice-saved">économie {euro(saved)}</span>}
                   </div>
                 </button>
@@ -660,7 +744,7 @@ export default function Home() {
 
           <div className="recipe-stats">
             <span><small>TECHNIQUE</small><strong>{selectedRecipe.chef_technique}</strong></span>
-            <span><small>MATÉRIEL</small><strong>{selectedRecipe.required_equipment?.length > 0 ? selectedRecipe.required_equipment.join(", ") : "Aucun"}</strong></span>
+            <span><small>MATÉRIEL</small><strong>{selectedRecipe.required_equipment?.length > 0 ? selectedRecipe.required_equipment.join(", ") : "Aucun matériel requis"}</strong></span>
           </div>
 
           {selectedRecipe.cost_breakdown && (
@@ -693,20 +777,27 @@ export default function Home() {
 
           {selectedRecipe.shopping_suggestions?.length > 0 && (
             <div className="premium-section">
-              <div className="section-heading"><span>Liste de courses maline</span><span className="muted-label premium-label">PREMIUM</span></div>
+              <div className="section-heading"><span>Coup de main du chef</span><span className="muted-label premium-label">PREMIUM</span></div>
               {isPremium ? (
                 <div className="shopping-list">
                   {selectedRecipe.shopping_suggestions.map((suggestion) => (
                     <div className="shopping-item" key={suggestion.name}>
                       <span className="shopping-plus" aria-hidden="true">+</span>
-                      <span><strong>{suggestion.name}</strong><small>{suggestion.reason}</small></span>
+                      <span className="shopping-body">
+                        <span className="shopping-head">
+                          <strong>{suggestion.name}</strong>
+                          {suggestion.role && <em className="shopping-role">{suggestion.role}</em>}
+                          {suggestion.cost && <span className="shopping-cost">{suggestion.cost}</span>}
+                        </span>
+                        <small>{suggestion.impact || suggestion.reason}</small>
+                      </span>
                     </div>
                   ))}
                 </div>
               ) : (
                 <button type="button" className="premium-lock" onClick={() => setPremiumOpen(true)}>
                   <span className="premium-lock-icon" aria-hidden="true">✦</span>
-                  <span><strong>{selectedRecipe.shopping_suggestions.length} ingrédients pour sublimer ce plat</strong><small>Débloque la liste de courses maline avec Premium.</small></span>
+                  <span><strong>{selectedRecipe.shopping_suggestions.length} achats de chef pour sublimer ce plat</strong><small>Des ajouts pointus (umami, acidité, texture) qu&apos;on ne devine pas seul. Débloque-les avec Premium.</small></span>
                   <span className="chevron" aria-hidden="true">›</span>
                 </button>
               )}
@@ -718,16 +809,27 @@ export default function Home() {
               <div className="section-heading"><span>Mode chef</span><span className="muted-label premium-label">PREMIUM</span></div>
               {isPremium ? (
                 <div className="chef-mode">
-                  <div className="chef-mode-row"><span className="chef-mode-tag">ASTUCE</span><p>{selectedRecipe.chef_mode.variation}</p></div>
-                  <div className="chef-mode-row"><span className="chef-mode-tag">ACCORD</span><p>{selectedRecipe.chef_mode.pairing}</p></div>
+                  {selectedRecipe.chef_mode.technique && <div className="chef-mode-row"><span className="chef-mode-tag">TECHNIQUE</span><p>{selectedRecipe.chef_mode.technique}</p></div>}
+                  {selectedRecipe.chef_mode.plating && <div className="chef-mode-row"><span className="chef-mode-tag">DRESSAGE</span><p>{selectedRecipe.chef_mode.plating}</p></div>}
+                  {(selectedRecipe.chef_mode.pairing || selectedRecipe.chef_mode.variation) && <div className="chef-mode-row"><span className="chef-mode-tag">ACCORD</span><p>{selectedRecipe.chef_mode.pairing || selectedRecipe.chef_mode.variation}</p></div>}
                 </div>
               ) : (
                 <button type="button" className="premium-lock" onClick={() => setPremiumOpen(true)}>
                   <span className="premium-lock-icon" aria-hidden="true">✦</span>
-                  <span><strong>Version gastronomique + accord suggéré</strong><small>Passe en Mode chef avec Premium.</small></span>
+                  <span><strong>Technique, dressage et accord de restaurant</strong><small>Passe en Mode chef avec Premium.</small></span>
                   <span className="chevron" aria-hidden="true">›</span>
                 </button>
               )}
+            </div>
+          )}
+
+          {isPremium && (selectedRecipe.make_ahead || selectedRecipe.common_mistake) && (
+            <div className="premium-section">
+              <div className="section-heading"><span>Notes du chef</span><span className="muted-label premium-label">PREMIUM</span></div>
+              <div className="chef-notes">
+                {selectedRecipe.make_ahead && <div className="chef-note"><span>À PRÉPARER À L&apos;AVANCE</span><p>{selectedRecipe.make_ahead}</p></div>}
+                {selectedRecipe.common_mistake && <div className="chef-note warn"><span>ERREUR À ÉVITER</span><p>{selectedRecipe.common_mistake}</p></div>}
+              </div>
             </div>
           )}
 
@@ -741,6 +843,9 @@ export default function Home() {
                   <div className="step-content">
                     <h2>{step.title}</h2>
                     <p>{step.instruction}</p>
+                    {isPremium && step.pro_tip && (
+                      <p className="step-tip"><span>ASTUCE CHEF</span>{step.pro_tip}</p>
+                    )}
                     {step.is_cooking_time && step.timer_seconds > 0 && (
                       <div className="timer-row">
                         {!timer && (
