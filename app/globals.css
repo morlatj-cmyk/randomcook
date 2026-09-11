@@ -127,4 +127,18 @@ button, input { font: inherit; } button, label { cursor: pointer; }
 .legal-delete { flex: 1.4; padding: 13px; border: 0; border-radius: 13px; background: var(--accent); color: white; font-size: 14px; font-weight: 600; }
 .legal-delete:disabled, .legal-cancel:disabled { opacity: .6; }
 
+.legal-page { width: 100%; max-width: 680px; margin: 0 auto; padding: 0 18px 64px; }
+.legal-page-bar { display: flex; align-items: center; height: 68px; border-bottom: 1px solid var(--line); }
+.legal-page-bar .app-brand { text-decoration: none; color: var(--ink); }
+.legal-page-body { padding-top: 32px; }
+.legal-page-body h1 { margin: 10px 0 6px; font-size: clamp(28px, 8vw, 40px); line-height: 1.1; letter-spacing: -.05em; }
+.legal-page-body h2 { margin: 28px 0 8px; font-size: 17px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
+.legal-page-body p { margin: 0 0 10px; color: var(--muted); font-size: 15px; line-height: 1.6; }
+.legal-page-body ul { margin: 0 0 10px; padding-left: 20px; }
+.legal-page-body li { margin-bottom: 6px; color: var(--muted); font-size: 15px; line-height: 1.6; }
+.legal-page-body strong { color: var(--ink); }
+.legal-page-body a { color: var(--sage); }
+.legal-page-body .legal-updated { margin-bottom: 20px; font: 500 12px 'DM Mono', monospace; letter-spacing: .04em; color: var(--sage); }
+.legal-page-back { display: inline-block; margin-top: 32px; padding: 13px 20px; border-radius: 13px; background: var(--sage); color: white; font-size: 14px; font-weight: 600; text-decoration: none; }
+
 @media (min-width: 700px) { .app-shell { max-width: 520px; padding-top: 0; } .funfact-overlay, .legal-overlay { align-items: center; } }

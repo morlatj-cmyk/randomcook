@@ -152,6 +152,7 @@ export default function AccountView({ user, authLoading, isPremium, totalSaved, 
               <p>Tu disposes d&apos;un droit d&apos;accès, de rectification, de portabilité et de suppression de tes données. La suppression est accessible directement depuis cet écran.</p>
               <h3>Contact</h3>
               <p>Pour toute question : privacy@randomcook.app</p>
+              <p><a href="/confidentialite" target="_blank" rel="noopener noreferrer" style={{ color: "var(--sage)" }}>Voir la version web complète ↗</a></p>
             </div>
           </div>
         </div>
