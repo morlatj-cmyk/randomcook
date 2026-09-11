@@ -11,6 +11,7 @@ import MixingLoader from "@/components/mixing-loader";
 import WelcomeAuth from "@/components/welcome-auth";
 import AuthPanel from "@/components/auth-panel";
 import PremiumCheckout from "@/components/premium-checkout";
+import { createAccount } from "@/app/actions/auth";
 
 const EQUIPMENT = [
   { id: "Poêle", label: "Poêle", icon: "◗" },
@@ -281,23 +282,19 @@ export default function Home() {
   };
 
   const signUpWithEmail = async (email, password) => {
-    const { data: signUpData, error: signUpError } = await supabaseRef.current.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo:
-          process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-          `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (signUpError) {
-      const msg = signUpError.message || "";
-      if (/already|exists|registered/i.test(msg)) throw new Error("Un compte existe déjà avec cet e-mail.");
-      if (/password/i.test(msg)) throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
-      if (/rate|too many/i.test(msg)) throw new Error("Trop de tentatives. Réessaie dans quelques minutes.");
+    const result = await createAccount(email, password);
+    if (result?.error) {
+      if (result.error === "exists") throw new Error("Un compte existe déjà avec cet e-mail. Connecte-toi.");
+      if (result.error === "weak_password") throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
       throw new Error("Inscription impossible pour le moment. Réessaie.");
     }
-    return signUpData;
+    // Le compte est déjà confirmé : on connecte l'utilisateur immédiatement.
+    const { data, error: signInError } = await supabaseRef.current.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    if (signInError) throw new Error("Compte créé. Connecte-toi avec tes identifiants.");
+    return data;
   };
 
   const dismissWelcome = () => {
