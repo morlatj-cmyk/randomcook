@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   EmbeddedCheckout,
   EmbeddedCheckoutProvider,
@@ -36,14 +36,18 @@ export default function PremiumCheckout({ onSuccess }) {
     }
   }, [onSuccess]);
 
+  // Objet d'options stable : le provider interdit de changer ces props après le
+  // premier rendu, donc on le mémoïse une fois pour toutes.
+  const options = useMemo(
+    () => ({ fetchClientSecret, onComplete: handleComplete }),
+    [fetchClientSecret, handleComplete],
+  );
+
   return (
     <div className="premium-checkout">
       {errorMsg && <p className="premium-checkout-error" role="alert">{errorMsg}</p>}
       {confirming && <p className="premium-checkout-status" role="status">Confirmation du paiement…</p>}
-      <EmbeddedCheckoutProvider
-        stripe={stripePromise}
-        options={{ clientSecret: fetchClientSecret, onComplete: handleComplete }}
-      >
+      <EmbeddedCheckoutProvider stripe={stripePromise} options={options}>
         <EmbeddedCheckout />
       </EmbeddedCheckoutProvider>
     </div>
