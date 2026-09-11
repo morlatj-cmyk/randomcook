@@ -80,6 +80,34 @@ export default function Home() {
   const [error, setError] = useState("");
   const [activeTimers, setActiveTimers] = useState({});
   const inputRef = useRef(null);
+  const audioContextRef = useRef(null);
+
+  const playChime = () => {
+    try {
+      if (typeof window === "undefined") return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!audioContextRef.current) audioContextRef.current = new AudioCtx();
+      const ctx = audioContextRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+      const now = ctx.currentTime;
+      [880, 1174.66, 1567.98].forEach((frequency, position) => {
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const start = now + position * 0.18;
+        oscillator.type = "sine";
+        oscillator.frequency.value = frequency;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.18, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.4);
+        oscillator.connect(gain).connect(ctx.destination);
+        oscillator.start(start);
+        oscillator.stop(start + 0.42);
+      });
+    } catch {
+      /* audio indisponible : on ignore silencieusement */
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -90,7 +118,10 @@ export default function Home() {
           if (next[key].running && next[key].remaining > 0) {
             next[key] = { ...next[key], remaining: next[key].remaining - 1 };
             changed = true;
-            if (next[key].remaining === 0) next[key] = { ...next[key], running: false, done: true };
+            if (next[key].remaining === 0) {
+              next[key] = { ...next[key], running: false, done: true };
+              playChime();
+            }
           }
         });
         return changed ? next : previous;
@@ -158,8 +189,41 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
-  const startTimer = (index, seconds) =>
-    setActiveTimers((previous) => ({ ...previous, [index]: { remaining: seconds, running: true, done: false } }));
+  const primeAudio = () => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!audioContextRef.current) audioContextRef.current = new AudioCtx();
+      if (audioContextRef.current.state === "suspended") audioContextRef.current.resume();
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const startTimer = (index, seconds) => {
+    primeAudio();
+    setActiveTimers((previous) => ({ ...previous, [index]: { total: seconds, remaining: seconds, running: true, done: false } }));
+  };
+
+  const pauseTimer = (index) =>
+    setActiveTimers((previous) => ({ ...previous, [index]: { ...previous[index], running: false } }));
+
+  const resumeTimer = (index) => {
+    primeAudio();
+    setActiveTimers((previous) => ({ ...previous, [index]: { ...previous[index], running: true } }));
+  };
+
+  const restartTimer = (index) => {
+    primeAudio();
+    setActiveTimers((previous) => ({ ...previous, [index]: { ...previous[index], remaining: previous[index].total, running: true, done: false } }));
+  };
+
+  const stopTimer = (index) =>
+    setActiveTimers((previous) => {
+      const next = { ...previous };
+      delete next[index];
+      return next;
+    });
 
   const reset = () => {
     setData(null);
@@ -333,8 +397,24 @@ export default function Home() {
                     <p>{step.instruction}</p>
                     {step.is_cooking_time && step.timer_seconds > 0 && (
                       <div className="timer-row">
-                        {!timer && <button className="timer-button" onClick={() => startTimer(index, step.timer_seconds)}>Minuteur {formatTime(step.timer_seconds)}</button>}
-                        {timer && <span className={`timer${timer.done ? " done" : ""}`}>{timer.done ? "Terminé" : formatTime(timer.remaining)}</span>}
+                        {!timer && (
+                          <button className="timer-button" onClick={() => startTimer(index, step.timer_seconds)}>Minuteur {formatTime(step.timer_seconds)}</button>
+                        )}
+                        {timer && (
+                          <div className={`timer-panel${timer.done ? " done" : ""}`}>
+                            <span className="timer-value">{timer.done ? "Terminé" : formatTime(timer.remaining)}</span>
+                            <div className="timer-controls">
+                              {!timer.done && timer.running && (
+                                <button className="timer-control" onClick={() => pauseTimer(index)} aria-label="Mettre en pause">Pause</button>
+                              )}
+                              {!timer.done && !timer.running && (
+                                <button className="timer-control" onClick={() => resumeTimer(index)} aria-label="Reprendre">Reprendre</button>
+                              )}
+                              <button className="timer-control" onClick={() => restartTimer(index)} aria-label="Redémarrer">Recommencer</button>
+                              <button className="timer-control ghost" onClick={() => stopTimer(index)} aria-label="Arrêter le minuteur">Arrêter</button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
