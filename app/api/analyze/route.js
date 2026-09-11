@@ -8,7 +8,7 @@ const ingredientSchema = z.object({
   name: z.string().min(1).max(80),
   quantity: z.string().max(60),
   confidence: z.enum(["high", "medium", "low"]),
-  note: z.string().max(140).optional(),
+  note: z.string().max(140).default(""),
 });
 
 const recipeSchema = z.object({
