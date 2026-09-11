@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import SavingsView from "@/components/savings-view";
 import AccountView from "@/components/account-view";
+import SplashScreen from "@/components/splash-screen";
 
 const EQUIPMENT = [
   { id: "Poêle", label: "Poêle", icon: "◗" },
@@ -188,6 +189,7 @@ export default function Home() {
   const [guestSavings, setGuestSavings] = useState([]);
   const [savingsLoading, setSavingsLoading] = useState(false);
 
+  const [showSplash, setShowSplash] = useState(true);
   const [equipment, setEquipment] = useState([]);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
@@ -569,6 +571,7 @@ export default function Home() {
 
   return (
     <main className="app-shell">
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       <header className="app-bar">
         <div className="app-brand">
           <span className="brand-mark" aria-hidden="true">RC</span>
