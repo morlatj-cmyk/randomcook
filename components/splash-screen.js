@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Logo from "@/components/logo";
 
 export default function SplashScreen({ onFinish }) {
   const [leaving, setLeaving] = useState(false);
@@ -27,7 +28,7 @@ export default function SplashScreen({ onFinish }) {
     <div className={`splash${leaving ? " splash-leaving" : ""}`} role="status" aria-label="Ouverture de RandomCook">
       <div className="splash-inner">
         <span className="splash-mark" aria-hidden="true">
-          <span className="splash-mark-text">RC</span>
+          <Logo size={52} className="splash-mark-logo" />
         </span>
         <span className="splash-wordmark">RandomCook</span>
         <span className="splash-tagline">anti-gaspi cuisine</span>

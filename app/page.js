@@ -6,6 +6,7 @@ import SavingsView from "@/components/savings-view";
 import AccountView from "@/components/account-view";
 import SplashScreen from "@/components/splash-screen";
 import FunFactPopup from "@/components/fun-fact-popup";
+import Logo from "@/components/logo";
 
 const EQUIPMENT = [
   { id: "Poêle", label: "Poêle", icon: "◗" },
@@ -577,7 +578,7 @@ export default function Home() {
       {showFunFact && <FunFactPopup onClose={() => setShowFunFact(false)} />}
       <header className="app-bar">
         <div className="app-brand">
-          <span className="brand-mark" aria-hidden="true">RC</span>
+          <span className="brand-mark" aria-hidden="true"><Logo size={22} /></span>
           <div><strong>RandomCook</strong><span>anti-gaspi cuisine</span></div>
         </div>
         <div className="saving-pill"><span>Économies</span><strong>{euro(totalSaved)}</strong></div>
