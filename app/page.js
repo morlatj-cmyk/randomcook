@@ -9,6 +9,8 @@ import FunFactPopup from "@/components/fun-fact-popup";
 import Logo from "@/components/logo";
 import MixingLoader from "@/components/mixing-loader";
 import WelcomeAuth from "@/components/welcome-auth";
+import AuthPanel from "@/components/auth-panel";
+import PremiumCheckout from "@/components/premium-checkout";
 
 const EQUIPMENT = [
   { id: "Poêle", label: "Poêle", icon: "◗" },
@@ -25,7 +27,6 @@ const CATEGORY_META = {
 };
 
   const FREE_DAILY_SCANS = 2;
-  const PREMIUM_FLAG_KEY = "rc_premium";
   const GOAL_KEY = "rc_monthly_goal";
   const WELCOME_KEY = "rc_welcomed";
 const SCAN_KEY = "rc_scans";
@@ -250,14 +251,28 @@ export default function Home() {
     setScanCount(readScanCount());
     try {
       setMonthlyGoal(Number(localStorage.getItem(GOAL_KEY) || 0));
-      if (localStorage.getItem(PREMIUM_FLAG_KEY) === "1") setIsPremium(true);
     } catch {
       /* stockage indisponible : on ignore */
     }
   }, []);
 
   useEffect(() => {
-    if (user?.user_metadata?.is_premium) setIsPremium(true);
+    let active = true;
+    if (!user) {
+      setIsPremium(false);
+      return;
+    }
+    supabaseRef.current
+      .from("subscriptions")
+      .select("status")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active) setIsPremium(data?.status === "active");
+      });
+    return () => {
+      active = false;
+    };
   }, [user]);
 
   const signInWithEmail = async (email, password) => {
@@ -312,20 +327,8 @@ export default function Home() {
     setDbSavings([]);
   };
 
-  const activatePremium = async () => {
+  const handlePremiumSuccess = () => {
     setIsPremium(true);
-    try {
-      localStorage.setItem(PREMIUM_FLAG_KEY, "1");
-    } catch {
-      /* stockage indisponible : on ignore */
-    }
-    if (user) {
-      try {
-        await supabaseRef.current.auth.updateUser({ data: { is_premium: true } });
-      } catch {
-        /* mise à jour du profil impossible : le mode démo reste actif localement */
-      }
-    }
     setPremiumOpen(false);
   };
 
@@ -1014,8 +1017,15 @@ export default function Home() {
             <span className="premium-tag">PREMIUM · 4,99 € / MOIS</span>
             <h2 id="premium-modal-title">RandomCook Premium</h2>
             <p>Scans illimités, suivi avancé des économies, listes de courses malines et Mode chef sur chaque recette.</p>
-            <button type="button" className="premium-button" onClick={activatePremium}>Activer l&apos;essai (démo)</button>
-            <button type="button" className="premium-modal-later" onClick={() => setPremiumOpen(false)}>Le paiement sécurisé arrive bientôt · plus tard</button>
+            {user ? (
+              <PremiumCheckout onSuccess={handlePremiumSuccess} />
+            ) : (
+              <>
+                <p className="premium-auth-hint">Connecte-toi ou crée un compte pour t&apos;abonner et retrouver ton abonnement sur tous tes appareils.</p>
+                <AuthPanel onEmailSignIn={signInWithEmail} onEmailSignUp={signUpWithEmail} />
+              </>
+            )}
+            <button type="button" className="premium-modal-later" onClick={() => setPremiumOpen(false)}>Plus tard</button>
           </div>
         </div>
       )}

@@ -169,4 +169,9 @@ button, input { font: inherit; } button, label { cursor: pointer; }
 .auth-check h3 { margin: 0 0 8px; font-size: 18px; color: var(--ink); }
 .auth-check p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--muted); }
 
+.premium-auth-hint { margin: 4px 0 12px; font-size: 13px; line-height: 1.5; color: var(--muted); text-align: center; }
+.premium-checkout { width: 100%; max-height: 60vh; overflow-y: auto; margin-bottom: 8px; border-radius: 12px; text-align: left; }
+.premium-checkout-error { margin: 0 0 8px; font-size: 13px; line-height: 1.4; color: var(--accent); text-align: center; }
+.premium-checkout-status { margin: 0 0 8px; font-size: 13px; color: var(--sage); text-align: center; }
+
 @media (min-width: 700px) { .app-shell { max-width: 520px; padding-top: 0; } .funfact-overlay, .legal-overlay { align-items: center; } }
