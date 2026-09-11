@@ -101,4 +101,30 @@ button, input { font: inherit; } button, label { cursor: pointer; }
 @keyframes mixing-steam { 0% { stroke-dashoffset: 42; opacity: 0; } 40% { opacity: .6; } 100% { stroke-dashoffset: 0; opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .mixing-surface, .mixing-steam path { animation-duration: 3s; } .mixing-spoon { animation: none; } }
 
-@media (min-width: 700px) { .app-shell { max-width: 520px; padding-top: 0; } .funfact-overlay { align-items: center; } }
+.legal-card { margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--card); }
+.legal-card .section-kicker { display: block; margin-bottom: 8px; }
+.legal-row { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 13px 4px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 14px; text-align: left; }
+.legal-row:last-child { border-bottom: 0; }
+.legal-row-danger { color: var(--accent); }
+.legal-chevron { color: var(--muted); font-size: 18px; }
+.legal-row-danger .legal-chevron { color: var(--accent); }
+.legal-overlay { position: fixed; inset: 0; z-index: 96; display: flex; align-items: flex-end; justify-content: center; padding: 16px; background: rgba(20,26,20,.55); backdrop-filter: blur(3px); animation: funfact-fade .25s ease-out both; }
+.legal-sheet { width: 100%; max-width: 460px; max-height: 84vh; display: flex; flex-direction: column; border-radius: 22px; background: var(--surface); overflow: hidden; animation: funfact-rise .34s cubic-bezier(.2,1,.35,1) both; }
+.legal-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 18px 12px; border-bottom: 1px solid var(--line); }
+.legal-sheet-head h2 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
+.legal-close { border: 0; background: var(--soft); color: var(--ink); width: 32px; height: 32px; border-radius: 50%; font-size: 20px; line-height: 1; }
+.legal-sheet-body { padding: 16px 18px 24px; overflow-y: auto; }
+.legal-sheet-body h3 { margin: 18px 0 6px; font-size: 14px; font-weight: 600; color: var(--ink); }
+.legal-sheet-body p { margin: 0 0 8px; font-size: 14px; line-height: 1.55; color: var(--muted); }
+.legal-sheet-body ul { margin: 0 0 8px; padding-left: 18px; }
+.legal-sheet-body li { font-size: 14px; line-height: 1.55; color: var(--muted); margin-bottom: 4px; }
+.legal-updated { font: 500 11px 'DM Mono', monospace; letter-spacing: .04em; color: var(--sage); }
+.legal-confirm { width: 100%; max-width: 400px; margin-bottom: 8px; padding: 22px; border-radius: 22px; background: var(--surface); animation: funfact-rise .34s cubic-bezier(.2,1,.35,1) both; }
+.legal-confirm h2 { margin: 0 0 8px; font-size: 19px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
+.legal-confirm p { margin: 0 0 16px; font-size: 14px; line-height: 1.55; color: var(--muted); }
+.legal-confirm-actions { display: flex; gap: 10px; }
+.legal-cancel { flex: 1; padding: 13px; border: 1px solid var(--line); border-radius: 13px; background: transparent; color: var(--ink); font-size: 14px; font-weight: 600; }
+.legal-delete { flex: 1.4; padding: 13px; border: 0; border-radius: 13px; background: var(--accent); color: white; font-size: 14px; font-weight: 600; }
+.legal-delete:disabled, .legal-cancel:disabled { opacity: .6; }
+
+@media (min-width: 700px) { .app-shell { max-width: 520px; padding-top: 0; } .funfact-overlay, .legal-overlay { align-items: center; } }

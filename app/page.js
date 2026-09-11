@@ -285,6 +285,17 @@ export default function Home() {
     setDbSavings([]);
   };
 
+  const deleteAccount = async () => {
+    const res = await fetch("/api/delete-account", { method: "POST" });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || "La suppression a échoué.");
+    }
+    await supabaseRef.current.auth.signOut().catch(() => {});
+    setUser(null);
+    setDbSavings([]);
+  };
+
   const activatePremium = async () => {
     setIsPremium(true);
     try {
@@ -954,6 +965,7 @@ export default function Home() {
           onSignIn={signInWithGoogle}
           onSignOut={signOut}
           onUpgrade={() => setPremiumOpen(true)}
+          onDeleteAccount={deleteAccount}
           authError={authError}
         />
       )}
