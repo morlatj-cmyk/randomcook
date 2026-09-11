@@ -995,7 +995,6 @@ export default function Home() {
       {tab === "account" && (
         <AccountView
           user={user}
-          authLoading={authLoading}
           isPremium={isPremium}
           totalSaved={totalSaved}
           mealsCount={savings.length}
@@ -1004,7 +1003,6 @@ export default function Home() {
           onSignOut={signOut}
           onUpgrade={() => setPremiumOpen(true)}
           onDeleteAccount={deleteAccount}
-          authError={authError}
         />
       )}
 
