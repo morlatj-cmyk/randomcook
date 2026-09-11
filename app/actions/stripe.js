@@ -27,15 +27,7 @@ export async function startPremiumCheckout() {
     subscription_data: { metadata: { user_id: user.id } },
     line_items: [
       {
-        price_data: {
-          currency: PREMIUM_PRODUCT.currency,
-          product_data: {
-            name: PREMIUM_PRODUCT.name,
-            description: PREMIUM_PRODUCT.description,
-          },
-          unit_amount: PREMIUM_PRODUCT.priceInCents,
-          recurring: { interval: PREMIUM_PRODUCT.interval },
-        },
+        price: PREMIUM_PRODUCT.stripePriceId,
         quantity: 1,
       },
     ],
