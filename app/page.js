@@ -179,6 +179,7 @@ export default function Home() {
   const formatTime = (seconds) =>
     `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
 
+  const hasEquipment = equipment.length > 0;
   const showHome = !data && !loading;
   const showList = data && !loading && !selectedRecipe;
   const showDetail = data && !loading && selectedRecipe;
@@ -218,12 +219,18 @@ export default function Home() {
             </div>
           </div>
 
-          <label className="scan-card">
+          <label className={`scan-card${hasEquipment ? "" : " locked"}`} aria-disabled={!hasEquipment}>
             <span className="scan-icon" aria-hidden="true">+</span>
-            <span className="scan-card-copy"><strong>Scanner mes ingrédients</strong><small>Photo ou galerie</small></span>
+            <span className="scan-card-copy">
+              <strong>Scanner mes ingrédients</strong>
+              <small>{hasEquipment ? "Photo ou galerie" : "Sélectionne d'abord ton matériel"}</small>
+            </span>
             <span className="chevron" aria-hidden="true">›</span>
-            <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} />
+            <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} disabled={!hasEquipment} />
           </label>
+          {!hasEquipment && (
+            <p className="scan-hint" role="status">Choisis au moins un équipement ci-dessus pour débloquer le scan.</p>
+          )}
 
           <div className="stats-row">
             <div><strong>{totalSaved.toFixed(0)} €</strong><span>économisés</span></div>
@@ -340,7 +347,7 @@ export default function Home() {
 
       <nav className="bottom-nav" aria-label="Navigation principale">
         <button className="nav-item active"><span aria-hidden="true">⌂</span>Accueil</button>
-        <button className="nav-item" onClick={() => (data ? reset() : inputRef.current?.click())}><span aria-hidden="true">+</span>Scanner</button>
+        <button className="nav-item" disabled={!data && !hasEquipment} onClick={() => (data ? reset() : hasEquipment && inputRef.current?.click())}><span aria-hidden="true">+</span>Scanner</button>
         <button className="nav-item"><span aria-hidden="true">€</span>Économies</button>
       </nav>
     </main>
