@@ -118,6 +118,10 @@ export default function AccountView({ user, authLoading, isPremium, totalSaved, 
           <span>Politique de confidentialité</span>
           <span className="legal-chevron" aria-hidden="true">›</span>
         </button>
+        <a href="/cgv" target="_blank" rel="noopener noreferrer" className="legal-row">
+          <span>Conditions générales de vente</span>
+          <span className="legal-chevron" aria-hidden="true">›</span>
+        </a>
         {user && (
           <button type="button" className="legal-row legal-row-danger" onClick={() => { setDeleteError(""); setConfirmOpen(true); }}>
             <span>Supprimer mon compte</span>
@@ -146,6 +150,8 @@ export default function AccountView({ user, authLoading, isPremium, totalSaved, 
               <p>Ces données servent uniquement à faire fonctionner l&apos;application : te connecter, générer des recettes et synchroniser tes économies entre tes appareils. Nous ne vendons jamais tes données.</p>
               <h3>Hébergement</h3>
               <p>Tes données sont stockées de façon sécurisée chez notre sous-traitant Supabase. La génération de recettes utilise un service d&apos;IA qui traite temporairement le contenu de ton scan.</p>
+              <h3>Paiement</h3>
+              <p>L&apos;abonnement Premium est traité par notre prestataire de paiement Stripe. Nous ne voyons ni ne stockons jamais ton numéro de carte : seules les données strictement nécessaires (statut de l&apos;abonnement, historique de facturation) sont conservées pour la gestion de ton compte.</p>
               <h3>Conservation</h3>
               <p>Tes données sont conservées tant que ton compte existe. Tu peux supprimer ton compte à tout moment, ce qui efface définitivement toutes tes données associées.</p>
               <h3>Tes droits (RGPD)</h3>
@@ -153,6 +159,7 @@ export default function AccountView({ user, authLoading, isPremium, totalSaved, 
               <h3>Contact</h3>
               <p>Pour toute question : privacy@randomcook.app</p>
               <p><a href="/confidentialite" target="_blank" rel="noopener noreferrer" style={{ color: "var(--sage)" }}>Voir la version web complète ↗</a></p>
+              <p><a href="/cgv" target="_blank" rel="noopener noreferrer" style={{ color: "var(--sage)" }}>Conditions générales de vente ↗</a></p>
             </div>
           </div>
         </div>

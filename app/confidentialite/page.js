@@ -51,6 +51,16 @@ export default function ConfidentialitePage() {
           de ton scan.
         </p>
 
+        <h2>Paiement</h2>
+        <p>
+          L&apos;abonnement Premium est traité par notre prestataire de paiement Stripe. Nous ne
+          voyons ni ne stockons jamais ton numéro de carte : celui-ci est transmis directement à
+          Stripe, qui agit en tant que sous-traitant de paiement. Nous conservons uniquement les
+          données nécessaires à la gestion de ton abonnement (statut, dates et historique de
+          facturation). Les modalités de prix, de reconduction et de résiliation figurent dans nos{" "}
+          <Link href="/cgv">conditions générales de vente</Link>.
+        </p>
+
         <h2>Conservation</h2>
         <p>
           Tes données sont conservées tant que ton compte existe. Tu peux supprimer ton compte à
