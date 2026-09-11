@@ -22,6 +22,7 @@ const stepSchema = z.object({
 
 const singleRecipeSchema = z.object({
   category: z.enum(["express", "normal", "long"]),
+  cuisine_style: z.string().min(1).max(60),
   recipe_title: z.string().min(1).max(100),
   subtitle: z.string().min(1).max(180),
   cook_time_minutes: z.number().int().min(1).max(120),
@@ -57,6 +58,14 @@ Propose jusqu'à 3 recettes basées principalement sur les ingrédients détect�
 - "normal" : environ 20 minutes, préparation plus travaillée.
 - "long" : plus longue et gourmande (par exemple une cuisson au four) si le matériel le permet, sinon une version mijotée plus élaborée avec le matériel disponible.
 
+DIVERSITÉ OBLIGATOIRE (règle la plus importante)
+- Les 3 recettes doivent être franchement DIFFÉRENTES les unes des autres : type de plat, technique et style culinaire distincts. Interdit de proposer deux variantes du même plat (par exemple tacos ET wraps, ou deux poêlées, ou deux gratins). Si deux idées se ressemblent, remplace-en une.
+- Varie les FORMATS de plat : par exemple une soupe/velouté, un plat mijoté ou une sauce, un gratin ou un plat au four, une salade tiède, une poêlée, une omelette/frittata, des galettes/croquettes, un curry, un risotto, une quiche, des farcis, etc. Chaque recette doit appartenir à un format différent.
+- Varie les ORIGINES culinaires quand c'est cohérent (française, italienne, asiatique, méditerranéenne, indienne, tex-mex...) sans jamais forcer un plat aberrant pour les ingrédients détectés.
+- Renseigne cuisine_style avec le style ou l'origine RÉEL du plat proposé, qui doit être cohérent avec la recette (un tajine est "Cuisine marocaine", un risotto "Cuisine italienne", un curry "Cuisine indienne"). Les 3 valeurs doivent être distinctes.
+- AU MOINS une des recettes doit être une idée VRAIMENT originale et inattendue à laquelle l'utilisateur ne penserait pas spontanément (une association ou une technique qui sort de l'évidence), tout en restant réaliste, savoureuse et cohérente avec les ingrédients. Évite les plats les plus évidents pour les ingrédients détectés.
+- Toutes les recettes restent crédibles et réalisables : la surprise vient de l'idée, jamais d'associations incohérentes.
+
 MINUTEURS DE CUISSON
 - is_cooking_time vaut true UNIQUEMENT pour une cuisson ou une chauffe réelle qui demande de surveiller le temps : cuire des pâtes dans l'eau bouillante, saisir à la poêle, mijoter, cuire au four, faire réduire, faire bouillir, etc.
 - is_cooking_time vaut false pour toute étape d'assemblage, de préparation à froid ou de dressage : couper, mélanger, assaisonner, lier hors du feu, émulsionner, dresser, réserver, préchauffer le four à vide.
@@ -80,7 +89,7 @@ export async function POST(request) {
     const { object } = await generateObject({
       model: gateway(process.env.RANDOMCOOK_MODEL || "openai/gpt-4o-mini"),
       schema: responseSchema,
-      temperature: 0.2,
+      temperature: 0.85,
       system: systemPrompt,
       messages: [{
         role: "user",

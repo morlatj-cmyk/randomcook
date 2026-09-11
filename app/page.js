@@ -26,6 +26,7 @@ const fallbackData = {
   recipes: [
     {
       category: "express",
+      cuisine_style: "Comfort food",
       recipe_title: "Bol de riz express au parmesan",
       subtitle: "Un riz froid réveillé en quelques minutes, lié hors du feu.",
       cook_time_minutes: 8,
@@ -39,6 +40,7 @@ const fallbackData = {
     },
     {
       category: "normal",
+      cuisine_style: "Poêlée asiatique",
       recipe_title: "Riz sauté croustillant, œuf coulant",
       subtitle: "Un riz doré à la poêle avec un œuf poêlé et beaucoup de poivre.",
       cook_time_minutes: 20,
@@ -53,6 +55,7 @@ const fallbackData = {
     },
     {
       category: "long",
+      cuisine_style: "Gratin de bistro",
       recipe_title: "Gratin de riz doré au four",
       subtitle: "Un riz gratiné lentement pour une surface croustillante et un cœur fondant.",
       cook_time_minutes: 35,
@@ -286,6 +289,7 @@ export default function Home() {
                     <span className={`category-tag ${item.category}`}>{meta.label}</span>
                     <span className="recipe-choice-time"><strong>{item.cook_time_minutes}</strong> min</span>
                   </div>
+                  {item.cuisine_style && <span className="recipe-choice-style">{item.cuisine_style}</span>}
                   <strong className="recipe-choice-title">{item.recipe_title}</strong>
                   <p>{item.subtitle}</p>
                   <div className="recipe-choice-foot">
@@ -304,7 +308,7 @@ export default function Home() {
           <button className="back-button" onClick={backToList} aria-label="Retour aux recettes">‹ <span>Autres recettes</span></button>
           <div className="recipe-title-row">
             <div>
-              <span className="section-kicker">{(CATEGORY_META[selectedRecipe.category] || {}).label?.toUpperCase() || "TA RECETTE"}</span>
+              <span className="section-kicker">{(CATEGORY_META[selectedRecipe.category] || {}).label?.toUpperCase() || "TA RECETTE"}{selectedRecipe.cuisine_style ? ` · ${selectedRecipe.cuisine_style}` : ""}</span>
               <h1 id="recipe-title">{selectedRecipe.recipe_title}</h1>
               <p>{selectedRecipe.subtitle}</p>
             </div>
