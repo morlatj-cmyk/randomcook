@@ -67,6 +67,8 @@ const singleRecipeSchema = z.object({
 const responseSchema = z.object({
   detected_ingredients: z.array(ingredientSchema).min(1).max(12),
   warnings: z.array(z.string().max(160)).max(5),
+  suitable_courses: z.array(z.enum(["plat", "dessert"])).min(1).max(2),
+  generated_course: z.enum(["plat", "dessert"]),
   recipes: z.array(singleRecipeSchema).min(1).max(3),
 });
 
@@ -87,8 +89,20 @@ MATÉRIEL DISPONIBLE — RÈGLE STRICTE ET IMPORTANTE
 - Si une recette est réellement un assemblage à froid sans aucun appareil, laisse required_equipment vide (tableau vide []).
 - Si "Rien du tout" est indiqué, TOUTES les recettes sont sans cuisson et required_equipment est vide pour chacune.
 
+PLAT OU DESSERT — CATÉGORISATION INTELLIGENTE
+- Analyse la nature des ingrédients pour déterminer ce qu'on peut RAISONNABLEMENT en faire : un plat salé ("plat"), un dessert sucré ("dessert"), ou les deux.
+- suitable_courses liste les types réellement cohérents. Exemples de raisonnement :
+  - framboise + yaourt, fruits + fromage blanc, chocolat + œufs → ["dessert"] (ce serait bizarre en plat salé).
+  - poulet + oignon + riz, pâtes + tomate, légumes + viande → ["plat"].
+  - œufs + farine + lait + beurre, ricotta + citron, pomme + pâte, fruits + œufs + sucre → ["plat", "dessert"] (les deux sont crédibles).
+- Ne propose "dessert" que si un dessert appétissant et cohérent est vraiment réalisable ; ne propose "plat" que si un plat salé savoureux est crédible. Ne force jamais un type qui donnerait un résultat étrange.
+- generated_course indique le type des recettes que tu renvoies MAINTENANT.
+- Un type demandé peut t'être imposé : dans ce cas, TOUTES les recettes renvoyées appartiennent à ce type (generated_course = ce type), à condition qu'il figure dans suitable_courses.
+- Si aucun type n'est imposé, choisis le type le plus naturel pour ces ingrédients (dessert si les ingrédients sont clairement sucrés, sinon plat) et renseigne generated_course en conséquence.
+- Les recettes d'un dessert doivent être de vrais desserts (sucrés, gourmands) ; celles d'un plat de vrais plats salés. Ne mélange jamais les deux dans une même génération.
+
 TROIS RECETTES
-Propose jusqu'à 3 recettes basées principalement sur les ingrédients disponibles, une par catégorie quand c'est possible :
+Propose jusqu'à 3 recettes du type demandé (generated_course), basées principalement sur les ingrédients disponibles, une par catégorie de temps quand c'est possible :
 - "express" : très rapide, 10 minutes ou moins.
 - "normal" : environ 20 minutes, plus travaillée.
 - "long" : plus longue et gourmande si le matériel le permet, sinon une version mijotée plus élaborée.
@@ -153,6 +167,7 @@ export async function POST(request) {
       ? body.ingredients.filter((item) => typeof item === "string" && item.trim()).slice(0, 12)
       : [];
     const isPremium = body?.isPremium === true;
+    const course = body?.course === "plat" || body?.course === "dessert" ? body.course : "";
 
     if (!imageBase64 && ingredients.length === 0) {
       return NextResponse.json({ error: "Aucune image ni ingrédient fourni" }, { status: 400 });
@@ -163,17 +178,21 @@ export async function POST(request) {
 
     const equipmentLabel = equipment.length > 0 ? equipment.join(", ") : "Non précisé";
     const system = `${basePrompt}\n\n${isPremium ? premiumInstructions : freeInstructions}`;
+    const courseLabel = course === "plat" ? "un PLAT salé" : course === "dessert" ? "un DESSERT sucré" : "";
+    const courseInstruction = course
+      ? ` L'utilisateur veut ${courseLabel} : renvoie UNIQUEMENT des recettes de ce type (generated_course = "${course}"), à condition que ce soit cohérent avec les ingrédients.`
+      : " Aucun type n'est imposé : choisis le type le plus naturel (plat ou dessert) selon les ingrédients.";
 
     const content = [];
     if (ingredients.length > 0) {
       content.push({
         type: "text",
-        text: `Ingrédients confirmés par l'utilisateur — utilise UNIQUEMENT ceux-ci (plus les basiques sel, poivre, eau, huile/beurre) : ${ingredients.join(", ")}. Matériel de cuisine disponible : ${equipmentLabel}. Renvoie exactement ces ingrédients dans detected_ingredients (confidence high, note vide) puis propose des recettes anti-gaspillage qui exploitent réellement le matériel disponible.`,
+        text: `Ingrédients confirmés par l'utilisateur — utilise UNIQUEMENT ceux-ci (plus les basiques sel, poivre, eau, huile/beurre) : ${ingredients.join(", ")}. Matériel de cuisine disponible : ${equipmentLabel}. Renvoie exactement ces ingrédients dans detected_ingredients (confidence high, note vide), évalue suitable_courses puis propose des recettes anti-gaspillage qui exploitent réellement le matériel disponible.${courseInstruction}`,
       });
     } else {
       content.push({
         type: "text",
-        text: `Matériel de cuisine disponible : ${equipmentLabel}. Identifie les ingrédients visibles sur la photo puis propose des recettes anti-gaspillage qui exploitent réellement ce matériel.`,
+        text: `Matériel de cuisine disponible : ${equipmentLabel}. Identifie les ingrédients visibles sur la photo, évalue suitable_courses puis propose des recettes anti-gaspillage qui exploitent réellement ce matériel.${courseInstruction}`,
       });
       content.push({ type: "image", image: Buffer.from(imageBase64, "base64"), mediaType: "image/jpeg" });
     }

@@ -52,6 +52,8 @@ const fallbackData = {
     { name: "Parmesan", quantity: "un fond", confidence: "medium", note: "Quantité difficile à estimer" },
   ],
   warnings: ["Ces recettes de secours n'ont pas été générées à partir de votre photo."],
+  suitable_courses: ["plat"],
+  generated_course: "plat",
   recipes: [
     {
       category: "express",
@@ -190,6 +192,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [selectedIngredients, setSelectedIngredients] = useState([]);
+  const [course, setCourse] = useState(null);
   const [regenerating, setRegenerating] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [error, setError] = useState("");
@@ -370,10 +373,12 @@ export default function Home() {
       if (!response.ok) throw new Error(payload.error || "Analyse impossible");
       setData(payload);
       setSelectedIngredients((payload.detected_ingredients || []).map((item) => item.name));
+      setCourse(payload.generated_course || null);
     } catch {
       setError("L'analyse n'a pas abouti. Des idées de secours sont prêtes à cuisiner.");
       setData(fallbackData);
       setSelectedIngredients(fallbackData.detected_ingredients.map((item) => item.name));
+      setCourse(fallbackData.generated_course);
     } finally {
       setLoading(false);
     }
@@ -384,23 +389,28 @@ export default function Home() {
       previous.includes(name) ? previous.filter((item) => item !== name) : [...previous, name]
     );
 
-  const regenerateRecipes = async () => {
+  const regenerateRecipes = async (courseOverride) => {
     if (selectedIngredients.length === 0 || regenerating) return;
+    const requestedCourse = courseOverride ?? course;
+    if (courseOverride) setCourse(courseOverride);
     setRegenerating(true);
     setError("");
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ingredients: selectedIngredients, equipment, isPremium }),
+        body: JSON.stringify({ ingredients: selectedIngredients, equipment, isPremium, course: requestedCourse || undefined }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Régénération impossible");
       setData((previous) => ({
         ...previous,
         recipes: payload.recipes,
+        suitable_courses: payload.suitable_courses?.length ? payload.suitable_courses : previous?.suitable_courses,
+        generated_course: payload.generated_course || previous?.generated_course,
         warnings: payload.warnings?.length ? payload.warnings : previous?.warnings || [],
       }));
+      setCourse(payload.generated_course || requestedCourse || null);
       setSelectedRecipe(null);
     } catch {
       setError("Impossible de régénérer les recettes. Réessaie dans un instant.");
@@ -492,6 +502,7 @@ export default function Home() {
   const reset = () => {
     setData(null);
     setSelectedIngredients([]);
+    setCourse(null);
     setRegenerating(false);
     setSelectedRecipe(null);
     setError("");
@@ -684,15 +695,43 @@ export default function Home() {
                 );
               })}
             </div>
+            {data.suitable_courses?.length > 1 && (
+              <div className="course-choice">
+                <span className="course-choice-label">Que veux-tu préparer&nbsp;?</span>
+                <div className="course-options" role="group" aria-label="Type de recette">
+                  {data.suitable_courses.map((option) => {
+                    const active = course === option;
+                    return (
+                      <button
+                        type="button"
+                        key={option}
+                        className={`course-option${active ? " active" : ""}`}
+                        aria-pressed={active}
+                        disabled={regenerating || selectedIngredients.length === 0}
+                        onClick={() => { if (!active) regenerateRecipes(option); }}
+                      >
+                        <span className="course-option-icon" aria-hidden="true">{option === "dessert" ? "◗" : "◆"}</span>
+                        {option === "dessert" ? "Dessert" : "Plat salé"}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {data.suitable_courses?.length === 1 && (
+              <p className="course-single" role="status">
+                Avec ces ingrédients, on part sur {data.suitable_courses[0] === "dessert" ? "un dessert" : "un plat salé"}.
+              </p>
+            )}
             <button
               type="button"
               className="regen-button"
-              onClick={regenerateRecipes}
+              onClick={() => regenerateRecipes()}
               disabled={selectedIngredients.length === 0 || regenerating}
             >
               {regenerating
                 ? "Régénération en cours…"
-                : `Régénérer les recettes · ${selectedIngredients.length} ingrédient${selectedIngredients.length > 1 ? "s" : ""}`}
+                : `Régénérer · ${selectedIngredients.length} ingrédient${selectedIngredients.length > 1 ? "s" : ""}${course ? (course === "dessert" ? " · dessert" : " · plat") : ""}`}
             </button>
             {selectedIngredients.length === 0 && (
               <p className="scan-hint" role="status">Sélectionne au moins un ingrédient pour régénérer.</p>
