@@ -20,13 +20,27 @@ const stepSchema = z.object({
   timer_seconds: z.number().int().min(0).max(7200),
 });
 
+const costIngredientSchema = z.object({
+  name: z.string().min(1).max(60),
+  cost: z.number().min(0).max(60),
+});
+
+const costBreakdownSchema = z.object({
+  servings: z.number().int().min(1).max(12),
+  ingredient_costs: z.array(costIngredientSchema).min(1).max(14),
+  home_cost: z.number().min(0).max(200),
+  bought_cost: z.number().min(0).max(400),
+  bought_reference: z.string().min(1).max(120),
+  money_saved_estimate: z.number().min(0).max(300),
+});
+
 const singleRecipeSchema = z.object({
   category: z.enum(["express", "normal", "long"]),
   cuisine_style: z.string().min(1).max(60),
   recipe_title: z.string().min(1).max(100),
   subtitle: z.string().min(1).max(180),
   cook_time_minutes: z.number().int().min(1).max(120),
-  money_saved_estimate: z.number().min(0).max(100),
+  cost_breakdown: costBreakdownSchema,
   chef_technique: z.string().min(1).max(80),
   required_equipment: z.array(z.string().max(40)).max(6),
   steps: z.array(stepSchema).min(2).max(9),
@@ -65,6 +79,15 @@ DIVERSITÉ OBLIGATOIRE (règle la plus importante)
 - Renseigne cuisine_style avec le style ou l'origine RÉEL du plat proposé, qui doit être cohérent avec la recette (un tajine est "Cuisine marocaine", un risotto "Cuisine italienne", un curry "Cuisine indienne"). Les 3 valeurs doivent être distinctes.
 - AU MOINS une des recettes doit être une idée VRAIMENT originale et inattendue à laquelle l'utilisateur ne penserait pas spontanément (une association ou une technique qui sort de l'évidence), tout en restant réaliste, savoureuse et cohérente avec les ingrédients. Évite les plats les plus évidents pour les ingrédients détectés.
 - Toutes les recettes restent crédibles et réalisables : la surprise vient de l'idée, jamais d'associations incohérentes.
+
+ANALYSE DE COÛT (cost_breakdown) — À CALCULER SÉRIEUSEMENT
+Le but est de comparer le coût de la recette faite maison au prix du même plat acheté tout prêt ou livré. Tous les montants sont en euros (€) et correspondent au plat entier pour le nombre de portions indiqué (servings).
+- ingredient_costs : liste chaque ingrédient réellement utilisé par la recette avec son coût pour la quantité employée, sur la base des prix moyens en supermarché français (2024). Estime la fraction utilisée (ex : 200 g de poulet ≈ 2,00 €, 1 oignon ≈ 0,20 €, 2 c. à s. de crème ≈ 0,25 €, 1 œuf ≈ 0,30 €, une portion de riz sec ≈ 0,25 €). Inclus les basiques utilisés (huile, beurre, sel, épices) avec de petits montants réalistes.
+- home_cost : la somme exacte des ingredient_costs, arrondie à deux décimales. C'est le vrai coût de la recette maison.
+- bought_reference : nomme le plat équivalent acheté/livré servant de comparaison (ex : "Plat traiteur équivalent", "Menu équivalent en livraison", "Barquette prête du rayon frais").
+- bought_cost : prix réaliste de CE plat équivalent acheté prêt à manger ou livré en France, pour le même nombre de portions (un plat livré coûte typiquement 2,5 à 4 fois le coût des ingrédients maison une fois main-d'œuvre, marge et livraison inclus). Reste crédible selon le type de plat.
+- money_saved_estimate : bought_cost moins home_cost, jamais négatif. C'est l'économie réelle en cuisinant soi-même.
+- Sois cohérent : plus la recette utilise d'ingrédients coûteux, plus home_cost et bought_cost augmentent. Ne gonfle pas artificiellement l'économie.
 
 MINUTEURS DE CUISSON
 - is_cooking_time vaut true UNIQUEMENT pour une cuisson ou une chauffe réelle qui demande de surveiller le temps : cuire des pâtes dans l'eau bouillante, saisir à la poêle, mijoter, cuire au four, faire réduire, faire bouillir, etc.

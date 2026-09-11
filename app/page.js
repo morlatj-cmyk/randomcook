@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import SavingsView from "@/components/savings-view";
+import AccountView from "@/components/account-view";
 
 const EQUIPMENT = [
   { id: "Poêle", label: "Poêle", icon: "◗" },
@@ -30,7 +33,19 @@ const fallbackData = {
       recipe_title: "Bol de riz express au parmesan",
       subtitle: "Un riz froid réveillé en quelques minutes, lié hors du feu.",
       cook_time_minutes: 8,
-      money_saved_estimate: 6.5,
+      cost_breakdown: {
+        servings: 2,
+        ingredient_costs: [
+          { name: "Riz cuit", cost: 0.5 },
+          { name: "Jaunes d'œufs", cost: 0.6 },
+          { name: "Parmesan", cost: 1.2 },
+          { name: "Huile d'olive", cost: 0.2 },
+        ],
+        home_cost: 2.5,
+        bought_cost: 9,
+        bought_reference: "Bol équivalent en traiteur",
+        money_saved_estimate: 6.5,
+      },
       chef_technique: "Émulsion résiduelle",
       required_equipment: ["Poêle"],
       steps: [
@@ -44,7 +59,19 @@ const fallbackData = {
       recipe_title: "Riz sauté croustillant, œuf coulant",
       subtitle: "Un riz doré à la poêle avec un œuf poêlé et beaucoup de poivre.",
       cook_time_minutes: 20,
-      money_saved_estimate: 9,
+      cost_breakdown: {
+        servings: 2,
+        ingredient_costs: [
+          { name: "Riz cuit", cost: 0.5 },
+          { name: "Œufs", cost: 0.6 },
+          { name: "Parmesan", cost: 1.2 },
+          { name: "Huile", cost: 0.2 },
+        ],
+        home_cost: 2.5,
+        bought_cost: 11.5,
+        bought_reference: "Plat de riz sauté en livraison",
+        money_saved_estimate: 9,
+      },
       chef_technique: "Réaction de Maillard",
       required_equipment: ["Poêle"],
       steps: [
@@ -59,7 +86,19 @@ const fallbackData = {
       recipe_title: "Gratin de riz doré au four",
       subtitle: "Un riz gratiné lentement pour une surface croustillante et un cœur fondant.",
       cook_time_minutes: 35,
-      money_saved_estimate: 12,
+      cost_breakdown: {
+        servings: 4,
+        ingredient_costs: [
+          { name: "Riz cuit", cost: 1 },
+          { name: "Œufs", cost: 0.9 },
+          { name: "Parmesan", cost: 1.8 },
+          { name: "Beurre", cost: 0.3 },
+        ],
+        home_cost: 4,
+        bought_cost: 16,
+        bought_reference: "Gratin équivalent en barquette",
+        money_saved_estimate: 12,
+      },
       chef_technique: "Gratinage",
       required_equipment: ["Four"],
       steps: [
@@ -71,16 +110,93 @@ const fallbackData = {
   ],
 };
 
+function euro(value) {
+  return `${Number(value || 0).toFixed(2).replace(".", ",")} €`;
+}
+
 export default function Home() {
-  const [totalSaved, setTotalSaved] = useState(42.5);
+  const supabaseRef = useRef(null);
+  if (supabaseRef.current === null) supabaseRef.current = createClient();
+
+  const [tab, setTab] = useState("home");
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+
+  const [dbSavings, setDbSavings] = useState([]);
+  const [guestSavings, setGuestSavings] = useState([]);
+  const [savingsLoading, setSavingsLoading] = useState(false);
+
   const [equipment, setEquipment] = useState([]);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [error, setError] = useState("");
   const [activeTimers, setActiveTimers] = useState({});
+  const [premiumOpen, setPremiumOpen] = useState(false);
   const inputRef = useRef(null);
   const audioContextRef = useRef(null);
+
+  const savings = user ? dbSavings : guestSavings;
+  const totalSaved = savings.reduce((sum, item) => sum + Number(item.saved || 0), 0);
+
+  const loadSavings = async () => {
+    const supabase = supabaseRef.current;
+    setSavingsLoading(true);
+    try {
+      const { data: rows, error: loadError } = await supabase
+        .from("savings")
+        .select("id,recipe_title,cuisine_style,category,home_cost,bought_cost,saved,created_at")
+        .order("created_at", { ascending: false });
+      if (loadError) throw loadError;
+      setDbSavings(rows || []);
+    } catch {
+      setDbSavings([]);
+    } finally {
+      setSavingsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const supabase = supabaseRef.current;
+    supabase.auth.getUser().then(({ data: userData }) => setUser(userData?.user ?? null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (user) loadSavings();
+    else setDbSavings([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const signInWithGoogle = async () => {
+    setAuthError("");
+    setAuthLoading(true);
+    try {
+      const supabase = supabaseRef.current;
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo:
+            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
+            `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (oauthError) throw oauthError;
+    } catch {
+      setAuthError("La connexion Google n'est pas disponible pour le moment.");
+      setAuthLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    await supabaseRef.current.auth.signOut();
+    setUser(null);
+    setDbSavings([]);
+  };
 
   const playChime = () => {
     try {
@@ -159,6 +275,7 @@ export default function Home() {
   const handlePhotoUpload = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    setTab("home");
     setError("");
     setLoading(true);
     const reader = new FileReader();
@@ -238,18 +355,51 @@ export default function Home() {
     setActiveTimers({});
   };
 
-  const finishMeal = () => {
-    setTotalSaved((previous) => previous + (selectedRecipe?.money_saved_estimate || 0));
+  const finishMeal = async () => {
+    const recipe = selectedRecipe;
+    const cost = recipe?.cost_breakdown || {};
+    const entry = {
+      recipe_title: recipe?.recipe_title || "Recette",
+      cuisine_style: recipe?.cuisine_style || "",
+      category: recipe?.category || "normal",
+      home_cost: Number(cost.home_cost || 0),
+      bought_cost: Number(cost.bought_cost || 0),
+      saved: Number(cost.money_saved_estimate || 0),
+    };
+
+    if (user) {
+      try {
+        await supabaseRef.current.from("savings").insert({ user_id: user.id, ...entry });
+        await loadSavings();
+      } catch {
+        /* si l'enregistrement échoue, on ne bloque pas l'utilisateur */
+      }
+    } else {
+      setGuestSavings((previous) => [
+        { id: `guest-${Date.now()}`, created_at: new Date().toISOString(), ...entry },
+        ...previous,
+      ]);
+    }
+
     reset();
+    setTab("savings");
+  };
+
+  const goToScan = () => {
+    reset();
+    setTab("home");
+    if (equipment.length > 0) requestAnimationFrame(() => inputRef.current?.click());
   };
 
   const formatTime = (seconds) =>
     `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
 
   const hasEquipment = equipment.length > 0;
-  const showHome = !data && !loading;
-  const showList = data && !loading && !selectedRecipe;
-  const showDetail = data && !loading && selectedRecipe;
+  const onHomeTab = tab === "home";
+  const showHome = onHomeTab && !data && !loading;
+  const showList = onHomeTab && data && !loading && !selectedRecipe;
+  const showDetail = onHomeTab && data && !loading && selectedRecipe;
+  const showLoading = onHomeTab && loading;
 
   return (
     <main className="app-shell">
@@ -258,7 +408,7 @@ export default function Home() {
           <span className="brand-mark" aria-hidden="true">RC</span>
           <div><strong>RandomCook</strong><span>anti-gaspi cuisine</span></div>
         </div>
-        <div className="saving-pill"><span>Économies</span><strong>{totalSaved.toFixed(2).replace(".", ",")} €</strong></div>
+        <div className="saving-pill"><span>Économies</span><strong>{euro(totalSaved)}</strong></div>
       </header>
 
       {showHome && (
@@ -301,13 +451,13 @@ export default function Home() {
 
           <div className="stats-row">
             <div><strong>{totalSaved.toFixed(0)} €</strong><span>économisés</span></div>
+            <div><strong>{savings.length}</strong><span>plats cuisinés</span></div>
             <div><strong>3</strong><span>recettes par scan</span></div>
-            <div><strong>0</strong><span>ingrédients jetés</span></div>
           </div>
         </section>
       )}
 
-      {loading && (
+      {showLoading && (
         <section className="loading-screen">
           <div className="loading-orbit" aria-hidden="true"><span /></div>
           <span className="section-kicker">ANALYSE EN COURS</span>
@@ -347,6 +497,7 @@ export default function Home() {
             <div className="section-heading"><span>Recettes proposées</span><span className="muted-label">{data.recipes.length} IDÉES</span></div>
             {data.recipes.map((item) => {
               const meta = CATEGORY_META[item.category] || { label: "Recette", hint: "" };
+              const saved = item.cost_breakdown?.money_saved_estimate;
               return (
                 <button key={`${item.category}-${item.recipe_title}`} className="recipe-choice-card" onClick={() => setSelectedRecipe(item)}>
                   <div className="recipe-choice-head">
@@ -358,7 +509,7 @@ export default function Home() {
                   <p>{item.subtitle}</p>
                   <div className="recipe-choice-foot">
                     <span>{item.required_equipment?.length > 0 ? item.required_equipment.join(" · ") : "Sans cuisson"}</span>
-                    <span className="chevron" aria-hidden="true">›</span>
+                    {saved != null && <span className="recipe-choice-saved">économie {euro(saved)}</span>}
                   </div>
                 </button>
               );
@@ -382,8 +533,35 @@ export default function Home() {
           <div className="recipe-stats">
             <span><small>TECHNIQUE</small><strong>{selectedRecipe.chef_technique}</strong></span>
             <span><small>MATÉRIEL</small><strong>{selectedRecipe.required_equipment?.length > 0 ? selectedRecipe.required_equipment.join(", ") : "Aucun"}</strong></span>
-            <span><small>ÉCONOMIE</small><strong className="success">+ {Number(selectedRecipe.money_saved_estimate).toFixed(2).replace(".", ",")} €</strong></span>
           </div>
+
+          {selectedRecipe.cost_breakdown && (
+            <div className="cost-block">
+              <div className="section-heading"><span>Coût du plat</span><span className="muted-label">POUR {selectedRecipe.cost_breakdown.servings} PORT.</span></div>
+              <div className="cost-compare">
+                <div className="cost-cell">
+                  <small>FAIT MAISON</small>
+                  <strong>{euro(selectedRecipe.cost_breakdown.home_cost)}</strong>
+                </div>
+                <div className="cost-cell">
+                  <small>{(selectedRecipe.cost_breakdown.bought_reference || "Acheté").toUpperCase()}</small>
+                  <strong className="struck">{euro(selectedRecipe.cost_breakdown.bought_cost)}</strong>
+                </div>
+                <div className="cost-cell cost-cell-saved">
+                  <small>TU ÉCONOMISES</small>
+                  <strong>{euro(selectedRecipe.cost_breakdown.money_saved_estimate)}</strong>
+                </div>
+              </div>
+              <details className="cost-detail">
+                <summary>Détail des ingrédients</summary>
+                <ul>
+                  {selectedRecipe.cost_breakdown.ingredient_costs?.map((ingredient) => (
+                    <li key={ingredient.name}><span>{ingredient.name}</span><span>{euro(ingredient.cost)}</span></li>
+                  ))}
+                </ul>
+              </details>
+            </div>
+          )}
 
           <div className="steps">
             <div className="section-heading"><span>Préparation</span><span className="muted-label">{selectedRecipe.steps.length} ÉTAPES</span></div>
@@ -423,16 +601,50 @@ export default function Home() {
             })}
           </div>
 
-          <button className="finish-button" onClick={finishMeal}>C&apos;est prêt · +{Number(selectedRecipe.money_saved_estimate).toFixed(2).replace(".", ",")} €</button>
+          <button className="finish-button" onClick={finishMeal}>C&apos;est prêt · +{euro(selectedRecipe.cost_breakdown?.money_saved_estimate)}</button>
         </section>
       )}
 
-      {error && <p className="notice" role="status">{error}</p>}
+      {tab === "savings" && (
+        <SavingsView
+          savings={savings}
+          loading={user ? savingsLoading : false}
+          user={user}
+          onGoToScan={goToScan}
+          onSignIn={() => setTab("account")}
+        />
+      )}
+
+      {tab === "account" && (
+        <AccountView
+          user={user}
+          authLoading={authLoading}
+          totalSaved={totalSaved}
+          mealsCount={savings.length}
+          onSignIn={signInWithGoogle}
+          onSignOut={signOut}
+          onUpgrade={() => setPremiumOpen(true)}
+          authError={authError}
+        />
+      )}
+
+      {error && onHomeTab && <p className="notice" role="status">{error}</p>}
+
+      {premiumOpen && (
+        <div className="premium-modal" role="dialog" aria-modal="true" aria-labelledby="premium-modal-title" onClick={() => setPremiumOpen(false)}>
+          <div className="premium-modal-card" onClick={(event) => event.stopPropagation()}>
+            <span className="premium-tag">PREMIUM</span>
+            <h2 id="premium-modal-title">Bientôt disponible</h2>
+            <p>Le paiement sécurisé arrive très vite. Tu seras parmi les premiers prévenus au lancement de RandomCook Premium.</p>
+            <button type="button" className="premium-button" onClick={() => setPremiumOpen(false)}>J&apos;ai hâte</button>
+          </div>
+        </div>
+      )}
 
       <nav className="bottom-nav" aria-label="Navigation principale">
-        <button className="nav-item active"><span aria-hidden="true">⌂</span>Accueil</button>
-        <button className="nav-item" disabled={!data && !hasEquipment} onClick={() => (data ? reset() : hasEquipment && inputRef.current?.click())}><span aria-hidden="true">+</span>Scanner</button>
-        <button className="nav-item"><span aria-hidden="true">€</span>Économies</button>
+        <button className={`nav-item${tab === "home" ? " active" : ""}`} onClick={() => setTab("home")}><span aria-hidden="true">⌂</span>Accueil</button>
+        <button className={`nav-item${tab === "savings" ? " active" : ""}`} onClick={() => setTab("savings")}><span aria-hidden="true">€</span>Économies</button>
+        <button className={`nav-item${tab === "account" ? " active" : ""}`} onClick={() => setTab("account")}><span aria-hidden="true">◔</span>Compte</button>
       </nav>
     </main>
   );
