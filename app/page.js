@@ -777,34 +777,31 @@ export default function Home() {
                 );
               })}
             </div>
-            {data.suitable_courses?.length > 1 && (
-              <div className="course-choice">
-                <span className="course-choice-label">Que veux-tu préparer&nbsp;?</span>
-                <div className="course-options" role="group" aria-label="Type de recette">
-                  {data.suitable_courses.map((option) => {
-                    const active = course === option;
-                    return (
-                      <button
-                        type="button"
-                        key={option}
-                        className={`course-option${active ? " active" : ""}`}
-                        aria-pressed={active}
-                        disabled={regenerating || selectedIngredients.length === 0}
-                        onClick={() => { if (!active) regenerateRecipes(option); }}
-                      >
+            <div className="course-choice">
+              <span className="course-choice-label">Que veux-tu préparer&nbsp;?</span>
+              <div className="course-options" role="group" aria-label="Type de recette">
+                {["plat", "dessert"].map((option) => {
+                  const active = course === option;
+                  const recommended = data.suitable_courses?.includes(option);
+                  return (
+                    <button
+                      type="button"
+                      key={option}
+                      className={`course-option${active ? " active" : ""}`}
+                      aria-pressed={active}
+                      disabled={regenerating || selectedIngredients.length === 0}
+                      onClick={() => { if (!active) regenerateRecipes(option); }}
+                    >
+                      <span className="course-option-main">
                         <span className="course-option-icon" aria-hidden="true">{option === "dessert" ? "◗" : "◆"}</span>
                         {option === "dessert" ? "Dessert" : "Plat salé"}
-                      </button>
-                    );
-                  })}
-                </div>
+                      </span>
+                      {recommended && <span className="course-option-badge">Conseillé</span>}
+                    </button>
+                  );
+                })}
               </div>
-            )}
-            {data.suitable_courses?.length === 1 && (
-              <p className="course-single" role="status">
-                Avec ces ingrédients, on part sur {data.suitable_courses[0] === "dessert" ? "un dessert" : "un plat salé"}.
-              </p>
-            )}
+            </div>
             <button
               type="button"
               className="regen-button"
