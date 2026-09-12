@@ -313,8 +313,17 @@ export default function AccountView({ user, isPremium, totalSaved, mealsCount, o
       {cancelStep === 2 && (
         <div className="legal-overlay legal-overlay-top" role="dialog" aria-modal="true" aria-labelledby="retain2-title" onClick={() => setCancelStep(0)}>
           <div className="legal-confirm" onClick={(e) => e.stopPropagation()}>
-            <h2 id="retain2-title">Tu as déjà économisé {euro(totalSaved)}</h2>
-            <p>Grâce à Premium, tu cuisines ce que tu as et tu jettes moins. À 4,99&nbsp;€/mois, ton abonnement se rembourse en général dès le premier plat sauvé du gaspillage.</p>
+            {totalSaved > 0 ? (
+              <>
+                <h2 id="retain2-title">Tu as déjà économisé {euro(totalSaved)}</h2>
+                <p>Grâce à Premium, tu cuisines ce que tu as et tu jettes moins. À 4,99&nbsp;€/mois, ton abonnement se rembourse en général dès le premier plat sauvé du gaspillage.</p>
+              </>
+            ) : (
+              <>
+                <h2 id="retain2-title">Le meilleur reste à venir</h2>
+                <p>Chaque scan te fait cuisiner ce que tu as sous la main et jeter moins. À 4,99&nbsp;€/mois, Premium se rembourse en général dès le premier plat sauvé du gaspillage&nbsp;— laisse-lui une chance de te faire économiser.</p>
+              </>
+            )}
             <div className="legal-confirm-actions">
               <button type="button" className="legal-cancel" onClick={() => setCancelStep(3)}>Continuer la résiliation</button>
               <button type="button" className="premium-button retention-keep" onClick={() => setCancelStep(0)}>Rester Premium</button>
