@@ -125,8 +125,11 @@ LISTE D'INGRÉDIENTS DOSÉE (ingredients) — PRÉCISION OBLIGATOIRE
 - Utilise systématiquement une unité mesurable et concrète : grammes (g), millilitres (ml) ou centilitres (cl), cuillères à soupe (c. à s.) / cuillères à café (c. à c.), ou un nombre de pièces précis (ex : "2 œufs", "1 oignon moyen (~150 g)"). N'écris JAMAIS de quantité vague comme "un peu", "un fond", "quelques", "au goût", "selon envie" pour les ingrédients principaux.
 - Pour les basiques d'assaisonnement (sel, poivre), tu peux indiquer "à ajuster" mais donne quand même un ordre de grandeur quand c'est utile (ex : "1/2 c. à c. de sel").
 - Les quantités de la liste et celles citées dans les étapes (steps) doivent être COHÉRENTES entre elles : si une étape dit "verse 20 cl de crème", la liste indique "20 cl de crème".
-- essential vaut true pour un ingrédient indispensable à la recette, false pour un élément d'assaisonnement ou une finition facultative.
+- essential vaut true pour un ingrédient indispensable à la recette, false pour un élément d'assaisonnement, une finition, ou un ingrédient suggéré en plus (non scanné) qui améliore le plat.
 - Inclus tous les ingrédients réellement utilisés dans les étapes, y compris les basiques employés (huile, beurre, eau).
+- Tu peux suggérer 1 ou 2 ingrédients supplémentaires NON scannés qui subliment le plat : marque-les essential:false, et donne quand même leur quantité précise et chiffrée comme les autres.
+- RÈGLE ABSOLUE : CHAQUE ingrédient de la liste, y compris les facultatifs (essential:false) et les suggérés non scannés, DOIT être réellement utilisé dans au moins une étape (steps). Un ingrédient listé mais jamais employé dans la préparation est INTERDIT.
+- Pour un ingrédient facultatif ou suggéré, formule son usage dans l'étape de façon explicitement optionnelle, en gardant son côté facultatif : commence par "Si tu en as," ou emploie "(facultatif)" / "si tu veux", et indique la quantité (ex : "Si tu en as, ajoute 30 g de parmesan râpé pour plus de gourmandise (facultatif)."). Ne rends jamais un ingrédient facultatif indispensable à la réussite du plat.
 
 ANALYSE DE COÛT (cost_breakdown) — À CALCULER SÉRIEUSEMENT
 Compare le coût maison au prix du même plat acheté tout prêt ou livré, en euros (€), pour le nombre de portions (servings).
