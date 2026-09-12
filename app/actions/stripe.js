@@ -70,3 +70,70 @@ export async function confirmPremiumCheckout(sessionId) {
 
   return !error;
 }
+
+// Récupère l'abonnement Stripe rattaché à l'utilisateur connecté (id lu depuis
+// sa propre ligne, jamais depuis une entrée utilisateur). Renvoie le statut, la
+// date de fin de période courante et l'indicateur de résiliation programmée.
+async function requireUserSubscriptionId() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Connexion requise.");
+
+  const admin = createAdminClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { persistSession: false } },
+  );
+  const { data } = await admin
+    .from("subscriptions")
+    .select("stripe_subscription_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  return { userId: user.id, subscriptionId: data?.stripe_subscription_id || null, admin };
+}
+
+function subscriptionSummary(subscription) {
+  // En API dahlia, current_period_end vit au niveau des items d'abonnement.
+  const item = subscription.items?.data?.[0];
+  const periodEndSec = item?.current_period_end || subscription.cancel_at || null;
+  return {
+    active: subscription.status === "active" || subscription.status === "trialing",
+    status: subscription.status,
+    cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end),
+    periodEnd: periodEndSec ? periodEndSec * 1000 : null,
+  };
+}
+
+export async function getSubscriptionInfo() {
+  const { subscriptionId } = await requireUserSubscriptionId();
+  if (!subscriptionId) return { active: false, status: "none", cancelAtPeriodEnd: false, periodEnd: null };
+
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  return subscriptionSummary(subscription);
+}
+
+// Résiliation « douce » : l'abonnement s'arrête à la fin de la période déjà
+// payée (l'utilisateur garde Premium jusque-là), il ne sera plus débité ensuite.
+export async function cancelPremiumSubscription() {
+  const { subscriptionId } = await requireUserSubscriptionId();
+  if (!subscriptionId) throw new Error("Aucun abonnement actif à résilier.");
+
+  const subscription = await stripe.subscriptions.update(subscriptionId, {
+    cancel_at_period_end: true,
+  });
+  return subscriptionSummary(subscription);
+}
+
+// Annule une résiliation programmée : l'abonnement reprend son cours normal.
+export async function resumePremiumSubscription() {
+  const { subscriptionId } = await requireUserSubscriptionId();
+  if (!subscriptionId) throw new Error("Aucun abonnement à réactiver.");
+
+  const subscription = await stripe.subscriptions.update(subscriptionId, {
+    cancel_at_period_end: false,
+  });
+  return subscriptionSummary(subscription);
+}

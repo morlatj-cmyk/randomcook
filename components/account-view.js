@@ -2,6 +2,20 @@
 
 import { useState } from "react";
 import AuthPanel from "@/components/auth-panel";
+import {
+  getSubscriptionInfo,
+  cancelPremiumSubscription,
+  resumePremiumSubscription,
+} from "@/app/actions/stripe";
+
+function formatDate(ms) {
+  if (!ms) return "";
+  try {
+    return new Date(ms).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  } catch {
+    return "";
+  }
+}
 
 const PREMIUM_PERKS = [
   { title: "Recettes illimitées", detail: "Plus de limite de scans par jour." },
@@ -24,6 +38,70 @@ export default function AccountView({ user, isPremium, totalSaved, mealsCount, o
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+
+  const [manageOpen, setManageOpen] = useState(false);
+  const [subInfo, setSubInfo] = useState(null);
+  const [subLoading, setSubLoading] = useState(false);
+  const [subError, setSubError] = useState("");
+  const [cancelStep, setCancelStep] = useState(0);
+  const [working, setWorking] = useState(false);
+  const [cancelDone, setCancelDone] = useState(false);
+
+  const loadSubInfo = async () => {
+    setSubLoading(true);
+    setSubError("");
+    try {
+      setSubInfo(await getSubscriptionInfo());
+    } catch {
+      setSubError("Impossible de charger les détails de ton abonnement. Réessaie.");
+    } finally {
+      setSubLoading(false);
+    }
+  };
+
+  const openManage = () => {
+    setCancelStep(0);
+    setCancelDone(false);
+    setSubError("");
+    setManageOpen(true);
+    loadSubInfo();
+  };
+
+  const closeManage = () => {
+    if (working) return;
+    setManageOpen(false);
+    setCancelStep(0);
+  };
+
+  const confirmCancel = async () => {
+    setWorking(true);
+    setSubError("");
+    try {
+      const info = await cancelPremiumSubscription();
+      setSubInfo(info);
+      setCancelStep(0);
+      setCancelDone(true);
+    } catch {
+      setSubError("La résiliation a échoué. Réessaie dans un instant.");
+      setCancelStep(0);
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const reactivate = async () => {
+    setWorking(true);
+    setSubError("");
+    try {
+      const info = await resumePremiumSubscription();
+      setSubInfo(info);
+      setCancelDone(false);
+    } catch {
+      setSubError("La réactivation a échoué. Réessaie dans un instant.");
+    } finally {
+      setWorking(false);
+    }
+  };
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -91,6 +169,7 @@ export default function AccountView({ user, isPremium, totalSaved, mealsCount, o
               </li>
             ))}
           </ul>
+          <button type="button" className="manage-sub-button" onClick={openManage}>Gérer mon abonnement</button>
         </div>
       ) : (
         <div className="premium-card">
@@ -160,6 +239,99 @@ export default function AccountView({ user, isPremium, totalSaved, mealsCount, o
               <p>Pour toute question : privacy@randomcook.app</p>
               <p><a href="/confidentialite" target="_blank" rel="noopener noreferrer" style={{ color: "var(--sage)" }}>Voir la version web complète ↗</a></p>
               <p><a href="/cgv" target="_blank" rel="noopener noreferrer" style={{ color: "var(--sage)" }}>Conditions générales de vente ↗</a></p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {manageOpen && (
+        <div className="legal-overlay" role="dialog" aria-modal="true" aria-labelledby="manage-title" onClick={closeManage}>
+          <div className="legal-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="legal-sheet-head">
+              <h2 id="manage-title">Gérer mon abonnement</h2>
+              <button type="button" className="legal-close" onClick={closeManage} aria-label="Fermer" disabled={working}>×</button>
+            </div>
+            <div className="legal-sheet-body">
+              <div className="sub-plan-row">
+                <div>
+                  <strong>RandomCook Premium</strong>
+                  <small>Scans illimités et toutes les fonctionnalités</small>
+                </div>
+                <span className="sub-plan-price">4,99&nbsp;€<em>/mois</em></span>
+              </div>
+
+              {subLoading ? (
+                <p className="sub-status" role="status">Chargement des détails…</p>
+              ) : subError ? (
+                <p className="sub-status sub-status-error" role="alert">{subError}</p>
+              ) : subInfo ? (
+                cancelDone || subInfo.cancelAtPeriodEnd ? (
+                  <>
+                    <div className="sub-status sub-status-warn">
+                      <strong>Résiliation programmée</strong>
+                      <span>Ton accès Premium reste actif jusqu&apos;au {formatDate(subInfo.periodEnd)}. Tu ne seras plus débité ensuite.</span>
+                    </div>
+                    <button type="button" className="premium-button" onClick={reactivate} disabled={working}>
+                      {working ? "Réactivation…" : "Réactiver mon abonnement"}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="sub-status">
+                      <strong>Abonnement actif</strong>
+                      <span>Prochain renouvellement le {formatDate(subInfo.periodEnd)}.</span>
+                    </div>
+                    <button type="button" className="sub-cancel-link" onClick={() => setCancelStep(1)} disabled={working}>
+                      Résilier mon abonnement
+                    </button>
+                  </>
+                )
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelStep === 1 && (
+        <div className="legal-overlay legal-overlay-top" role="dialog" aria-modal="true" aria-labelledby="retain1-title" onClick={() => setCancelStep(0)}>
+          <div className="legal-confirm" onClick={(e) => e.stopPropagation()}>
+            <h2 id="retain1-title">Attends une seconde…</h2>
+            <p>En résiliant, tu perds l&apos;accès à&nbsp;:</p>
+            <ul className="retention-perks">
+              {PREMIUM_PERKS.map((perk) => (
+                <li key={perk.title}><span aria-hidden="true">✕</span>{perk.title}</li>
+              ))}
+            </ul>
+            <div className="legal-confirm-actions">
+              <button type="button" className="legal-cancel" onClick={() => setCancelStep(2)}>Continuer</button>
+              <button type="button" className="premium-button retention-keep" onClick={() => setCancelStep(0)}>Garder Premium</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelStep === 2 && (
+        <div className="legal-overlay legal-overlay-top" role="dialog" aria-modal="true" aria-labelledby="retain2-title" onClick={() => setCancelStep(0)}>
+          <div className="legal-confirm" onClick={(e) => e.stopPropagation()}>
+            <h2 id="retain2-title">Tu as déjà économisé {euro(totalSaved)}</h2>
+            <p>Grâce à Premium, tu cuisines ce que tu as et tu jettes moins. À 4,99&nbsp;€/mois, ton abonnement se rembourse en général dès le premier plat sauvé du gaspillage.</p>
+            <div className="legal-confirm-actions">
+              <button type="button" className="legal-cancel" onClick={() => setCancelStep(3)}>Continuer la résiliation</button>
+              <button type="button" className="premium-button retention-keep" onClick={() => setCancelStep(0)}>Rester Premium</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelStep === 3 && (
+        <div className="legal-overlay legal-overlay-top" role="dialog" aria-modal="true" aria-labelledby="retain3-title" onClick={() => !working && setCancelStep(0)}>
+          <div className="legal-confirm" onClick={(e) => e.stopPropagation()}>
+            <h2 id="retain3-title">Confirmer la résiliation&nbsp;?</h2>
+            <p>Ton Premium restera actif jusqu&apos;à la fin de la période déjà payée{subInfo?.periodEnd ? ` (le ${formatDate(subInfo.periodEnd)})` : ""}. Aucun nouveau prélèvement ne sera effectué. Tu peux réactiver à tout moment.</p>
+            {subError && <p className="scan-hint" role="alert" style={{ color: "var(--accent)" }}>{subError}</p>}
+            <div className="legal-confirm-actions">
+              <button type="button" className="premium-button retention-keep" onClick={() => setCancelStep(0)} disabled={working}>Garder Premium</button>
+              <button type="button" className="legal-delete" onClick={confirmCancel} disabled={working}>{working ? "Résiliation…" : "Résilier"}</button>
             </div>
           </div>
         </div>
