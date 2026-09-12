@@ -30,28 +30,6 @@ const CATEGORY_META = {
   const FREE_DAILY_SCANS = 2;
   const GOAL_KEY = "rc_monthly_goal";
   const WELCOME_KEY = "rc_welcomed";
-const SCAN_KEY = "rc_scans";
-
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function readScanCount() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(SCAN_KEY) || "{}");
-    return raw.date === todayKey() ? Number(raw.count || 0) : 0;
-  } catch {
-    return 0;
-  }
-}
-
-function writeScanCount(count) {
-  try {
-    localStorage.setItem(SCAN_KEY, JSON.stringify({ date: todayKey(), count }));
-  } catch {
-    /* stockage indisponible : on ignore */
-  }
-}
 
 const fallbackData = {
   detected_ingredients: [
@@ -270,13 +248,27 @@ export default function Home() {
   }, [user]);
 
   useEffect(() => {
-    setScanCount(readScanCount());
     try {
       setMonthlyGoal(Number(localStorage.getItem(GOAL_KEY) || 0));
     } catch {
       /* stockage indisponible : on ignore */
     }
   }, []);
+
+  // Synchronise le quota de scans avec le serveur (source de vérité). Rejoué à
+  // chaque changement de session : connexion/déconnexion change le compteur.
+  useEffect(() => {
+    let active = true;
+    fetch("/api/scan-usage")
+      .then((response) => response.json())
+      .then((usage) => {
+        if (active && typeof usage?.scansUsed === "number") setScanCount(usage.scansUsed);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   useEffect(() => {
     let active = true;
@@ -421,13 +413,20 @@ export default function Home() {
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64, equipment, isPremium }),
+        body: JSON.stringify({ imageBase64, equipment }),
       });
       const payload = await response.json();
+      if (response.status === 429) {
+        setScanCount(payload.limit ?? FREE_DAILY_SCANS);
+        setLoading(false);
+        setPremiumOpen(true);
+        return;
+      }
       if (!response.ok) throw new Error(payload.error || "Analyse impossible");
       setData(payload);
       setSelectedIngredients((payload.detected_ingredients || []).map((item) => item.name));
       setCourse(payload.generated_course || null);
+      if (typeof payload.scansUsed === "number") setScanCount(payload.scansUsed);
     } catch {
       setError("L'analyse n'a pas abouti. Des idées de secours sont prêtes à cuisiner.");
       setData(fallbackData);
@@ -476,7 +475,7 @@ export default function Home() {
   const handlePhotoUpload = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!isPremium && readScanCount() >= FREE_DAILY_SCANS) {
+    if (!isPremium && scanCount >= FREE_DAILY_SCANS) {
       if (inputRef.current) inputRef.current.value = "";
       setPremiumOpen(true);
       return;
@@ -484,11 +483,6 @@ export default function Home() {
     setTab("home");
     setError("");
     setLoading(true);
-    if (!isPremium) {
-      const nextCount = readScanCount() + 1;
-      writeScanCount(nextCount);
-      setScanCount(nextCount);
-    }
     const reader = new FileReader();
     reader.onload = (loadEvent) => {
       const dataUrl = loadEvent.target.result;
@@ -602,7 +596,7 @@ export default function Home() {
   const goToScan = () => {
     reset();
     setTab("home");
-    if (!isPremium && readScanCount() >= FREE_DAILY_SCANS) {
+    if (!isPremium && scanCount >= FREE_DAILY_SCANS) {
       setPremiumOpen(true);
       return;
     }

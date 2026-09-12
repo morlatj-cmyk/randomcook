@@ -1,6 +1,15 @@
 import { generateObject, gateway } from "ai";
 import { z } from "zod";
 import { NextResponse } from "next/server";
+import {
+  FREE_DAILY_SCANS,
+  todayKey,
+  resolveUserAndPremium,
+  readUserScanCount,
+  incrementUserScan,
+  readAnonScanCount,
+  makeAnonScanCookie,
+} from "@/lib/entitlement";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -184,7 +193,6 @@ export async function POST(request) {
     const ingredients = Array.isArray(body?.ingredients)
       ? body.ingredients.filter((item) => typeof item === "string" && item.trim()).slice(0, 12)
       : [];
-    const isPremium = body?.isPremium === true;
     const course = body?.course === "plat" || body?.course === "dessert" ? body.course : "";
 
     if (!imageBase64 && ingredients.length === 0) {
@@ -192,6 +200,23 @@ export async function POST(request) {
     }
     if (imageBase64 && imageBase64.length > 8_000_000) {
       return NextResponse.json({ error: "Image trop volumineuse" }, { status: 413 });
+    }
+
+    // Droits d'accès résolus côté serveur : le premium vient de l'abonnement en
+    // base (jamais du body), et un nouveau scan (= requête avec image) est
+    // soumis au quota gratuit quotidien.
+    const { user, isPremium } = await resolveUserAndPremium();
+    const isNewScan = Boolean(imageBase64);
+    const day = todayKey();
+
+    if (isNewScan && !isPremium) {
+      const used = user ? await readUserScanCount(user.id, day) : await readAnonScanCount(day);
+      if (used >= FREE_DAILY_SCANS) {
+        return NextResponse.json(
+          { error: "limit", scansUsed: used, scansRemaining: 0, limit: FREE_DAILY_SCANS },
+          { status: 429 },
+        );
+      }
     }
 
     const equipmentLabel = equipment.length > 0 ? equipment.join(", ") : "Non précisé";
@@ -223,7 +248,28 @@ export async function POST(request) {
       messages: [{ role: "user", content }],
     });
 
-    return NextResponse.json(object);
+    // Le scan a réussi : on comptabilise l'usage (uniquement pour un nouveau
+    // scan d'un utilisateur non premium) et on renvoie l'état du quota.
+    let scansUsed = 0;
+    let anonCookie = null;
+    if (isNewScan && !isPremium) {
+      if (user) {
+        scansUsed = (await incrementUserScan(user.id, day)) ?? (await readUserScanCount(user.id, day));
+      } else {
+        scansUsed = (await readAnonScanCount(day)) + 1;
+        anonCookie = makeAnonScanCookie(day, scansUsed);
+      }
+    }
+
+    const response = NextResponse.json({
+      ...object,
+      isPremium,
+      scansUsed,
+      scansRemaining: isPremium ? null : Math.max(0, FREE_DAILY_SCANS - scansUsed),
+      limit: FREE_DAILY_SCANS,
+    });
+    if (anonCookie) response.cookies.set(anonCookie.name, anonCookie.value, anonCookie.options);
+    return response;
   } catch (error) {
     console.error("[v0] Analyse impossible", error);
     return NextResponse.json({ error: "L'analyse IA est momentanément indisponible" }, { status: 502 });

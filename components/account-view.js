@@ -201,6 +201,10 @@ export default function AccountView({ user, isPremium, totalSaved, mealsCount, o
           <span>Conditions générales de vente</span>
           <span className="legal-chevron" aria-hidden="true">›</span>
         </a>
+        <a href="/mentions-legales" target="_blank" rel="noopener noreferrer" className="legal-row">
+          <span>Mentions légales</span>
+          <span className="legal-chevron" aria-hidden="true">›</span>
+        </a>
         {user && (
           <button type="button" className="legal-row legal-row-danger" onClick={() => { setDeleteError(""); setConfirmOpen(true); }}>
             <span>Supprimer mon compte</span>
@@ -228,7 +232,9 @@ export default function AccountView({ user, isPremium, totalSaved, mealsCount, o
               <h3>Pourquoi</h3>
               <p>Ces données servent uniquement à faire fonctionner l&apos;application : te connecter, générer des recettes et synchroniser tes économies entre tes appareils. Nous ne vendons jamais tes données.</p>
               <h3>Hébergement</h3>
-              <p>Tes données sont stockées de façon sécurisée chez notre sous-traitant Supabase. La génération de recettes utilise un service d&apos;IA qui traite temporairement le contenu de ton scan.</p>
+              <p>Tes données sont stockées de façon sécurisée chez notre sous-traitant Supabase, et l&apos;application est hébergée par Vercel.</p>
+              <h3>Génération par IA</h3>
+              <p>Pour générer des recettes, la photo de tes ingrédients est transmise à un fournisseur d&apos;IA tiers qui la traite temporairement, sans la conserver après l&apos;analyse. Ce traitement peut impliquer un transfert hors de l&apos;Union européenne, encadré par des garanties appropriées.</p>
               <h3>Paiement</h3>
               <p>L&apos;abonnement Premium est traité par notre prestataire de paiement Stripe. Nous ne voyons ni ne stockons jamais ton numéro de carte : seules les données strictement nécessaires (statut de l&apos;abonnement, historique de facturation) sont conservées pour la gestion de ton compte.</p>
               <h3>Conservation</h3>

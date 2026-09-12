@@ -46,9 +46,18 @@ export default function ConfidentialitePage() {
 
         <h2>Hébergement</h2>
         <p>
-          Tes données sont stockées de façon sécurisée chez notre sous-traitant Supabase. La
-          génération de recettes utilise un service d&apos;IA qui traite temporairement le contenu
-          de ton scan.
+          Tes données sont stockées de façon sécurisée chez notre sous-traitant Supabase, et
+          l&apos;application est hébergée par Vercel.
+        </p>
+
+        <h2>Génération par intelligence artificielle</h2>
+        <p>
+          Pour générer des recettes, la photo de tes ingrédients (ou la liste d&apos;ingrédients
+          confirmés) est transmise à un <strong>fournisseur d&apos;IA tiers</strong> qui la traite
+          de façon temporaire, le temps de produire les recettes. Cette photo n&apos;est pas
+          conservée par RandomCook après l&apos;analyse. Ce traitement peut impliquer un transfert
+          de données en dehors de l&apos;Union européenne, encadré par les garanties contractuelles
+          appropriées. En lançant un scan, tu acceptes cette transmission.
         </p>
 
         <h2>Paiement</h2>
