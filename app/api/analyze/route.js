@@ -12,6 +12,12 @@ const ingredientSchema = z.object({
   note: z.string().max(140),
 });
 
+const recipeIngredientSchema = z.object({
+  name: z.string().min(1).max(60),
+  quantity: z.string().min(1).max(40),
+  essential: z.boolean(),
+});
+
 const stepSchema = z.object({
   step_number: z.number().int().min(1),
   title: z.string().min(1).max(80),
@@ -57,6 +63,7 @@ const singleRecipeSchema = z.object({
   cost_breakdown: costBreakdownSchema,
   chef_technique: z.string().min(1).max(80),
   required_equipment: z.array(z.string().max(40)).max(6),
+  ingredients: z.array(recipeIngredientSchema).min(2).max(16),
   steps: z.array(stepSchema).min(2).max(12),
   shopping_suggestions: z.array(shoppingSuggestionSchema).min(2).max(4),
   chef_mode: chefModeSchema,
@@ -112,6 +119,14 @@ DIVERSITÉ OBLIGATOIRE
 - Varie les FORMATS (soupe, mijoté, gratin, salade tiède, poêlée, frittata, galettes, curry, risotto, quiche, farcis...) et les ORIGINES culinaires quand c'est cohérent.
 - Renseigne cuisine_style avec l'origine RÉELLE et cohérente du plat. Les 3 valeurs doivent être distinctes.
 - AU MOINS une recette doit être une idée VRAIMENT originale et inattendue, tout en restant réaliste et savoureuse.
+
+LISTE D'INGRÉDIENTS DOSÉE (ingredients) — PRÉCISION OBLIGATOIRE
+- Chaque recette DOIT fournir la liste complète de ses ingrédients avec des quantités PRÉCISES et CHIFFRÉES, dosées pour le nombre exact de portions indiqué dans cost_breakdown.servings.
+- Utilise systématiquement une unité mesurable et concrète : grammes (g), millilitres (ml) ou centilitres (cl), cuillères à soupe (c. à s.) / cuillères à café (c. à c.), ou un nombre de pièces précis (ex : "2 œufs", "1 oignon moyen (~150 g)"). N'écris JAMAIS de quantité vague comme "un peu", "un fond", "quelques", "au goût", "selon envie" pour les ingrédients principaux.
+- Pour les basiques d'assaisonnement (sel, poivre), tu peux indiquer "à ajuster" mais donne quand même un ordre de grandeur quand c'est utile (ex : "1/2 c. à c. de sel").
+- Les quantités de la liste et celles citées dans les étapes (steps) doivent être COHÉRENTES entre elles : si une étape dit "verse 20 cl de crème", la liste indique "20 cl de crème".
+- essential vaut true pour un ingrédient indispensable à la recette, false pour un élément d'assaisonnement ou une finition facultative.
+- Inclus tous les ingrédients réellement utilisés dans les étapes, y compris les basiques employés (huile, beurre, eau).
 
 ANALYSE DE COÛT (cost_breakdown) — À CALCULER SÉRIEUSEMENT
 Compare le coût maison au prix du même plat acheté tout prêt ou livré, en euros (€), pour le nombre de portions (servings).

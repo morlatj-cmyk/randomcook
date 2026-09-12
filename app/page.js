@@ -84,6 +84,13 @@ const fallbackData = {
       },
       chef_technique: "Émulsion résiduelle",
       required_equipment: ["Poêle"],
+      ingredients: [
+        { name: "Riz cuit froid", quantity: "300 g (2 bols)", essential: true },
+        { name: "Jaunes d'œufs", quantity: "2 pièces", essential: true },
+        { name: "Parmesan râpé", quantity: "40 g", essential: true },
+        { name: "Huile d'olive", quantity: "1 c. à s.", essential: true },
+        { name: "Sel et poivre", quantity: "à ajuster", essential: false },
+      ],
       steps: [
         { step_number: 1, title: "Saisir le riz", instruction: "Chauffe un filet d'huile, ajoute le riz froid et laisse-le tiédir 2 minutes.", pro_tip: "", is_cooking_time: true, timer_seconds: 120 },
         { step_number: 2, title: "Lier hors du feu", instruction: "Hors du feu, ajoute les jaunes et le parmesan, remue vivement jusqu'à une sauce brillante.", pro_tip: "", is_cooking_time: false, timer_seconds: 0 },
@@ -121,6 +128,13 @@ const fallbackData = {
       },
       chef_technique: "Réaction de Maillard",
       required_equipment: ["Poêle"],
+      ingredients: [
+        { name: "Riz cuit froid", quantity: "300 g (2 bols)", essential: true },
+        { name: "Œufs", quantity: "2 pièces", essential: true },
+        { name: "Parmesan râpé", quantity: "40 g", essential: true },
+        { name: "Huile", quantity: "2 c. à s.", essential: true },
+        { name: "Poivre du moulin", quantity: "à ajuster", essential: false },
+      ],
       steps: [
         { step_number: 1, title: "Croûte de riz", instruction: "Étale le riz dans une poêle chaude et laisse une croûte se former sans remuer, 4 minutes.", pro_tip: "", is_cooking_time: true, timer_seconds: 240 },
         { step_number: 2, title: "Assaisonner", instruction: "Ajoute le parmesan, mélange puis réserve au chaud.", pro_tip: "", is_cooking_time: false, timer_seconds: 0 },
@@ -159,6 +173,13 @@ const fallbackData = {
       },
       chef_technique: "Gratinage",
       required_equipment: ["Four"],
+      ingredients: [
+        { name: "Riz cuit", quantity: "600 g (4 bols)", essential: true },
+        { name: "Œufs", quantity: "3 pièces", essential: true },
+        { name: "Parmesan râpé", quantity: "60 g", essential: true },
+        { name: "Beurre", quantity: "20 g (pour le plat)", essential: true },
+        { name: "Sel et poivre", quantity: "à ajuster", essential: false },
+      ],
       steps: [
         { step_number: 1, title: "Préchauffer", instruction: "Préchauffe le four à 200°C.", pro_tip: "", is_cooking_time: false, timer_seconds: 0 },
         { step_number: 2, title: "Monter le plat", instruction: "Mélange le riz, les jaunes et le parmesan, verse dans un plat et lisse la surface.", pro_tip: "", is_cooking_time: false, timer_seconds: 0 },
@@ -872,6 +893,20 @@ export default function Home() {
                   ))}
                 </ul>
               </details>
+            </div>
+          )}
+
+          {selectedRecipe.ingredients?.length > 0 && (
+            <div className="recipe-ingredients">
+              <div className="section-heading"><span>Ingrédients</span><span className="muted-label">POUR {selectedRecipe.cost_breakdown?.servings || 2} PORT.</span></div>
+              <ul className="recipe-ingredients-list">
+                {selectedRecipe.ingredients.map((ingredient) => (
+                  <li className="recipe-ingredient" key={ingredient.name}>
+                    <span className="recipe-ingredient-name">{ingredient.name}{ingredient.essential === false && <em className="recipe-ingredient-opt"> · facultatif</em>}</span>
+                    <span className="recipe-ingredient-qty">{ingredient.quantity}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 

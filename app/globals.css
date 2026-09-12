@@ -169,6 +169,8 @@ button, input { font: inherit; } button, label { cursor: pointer; }
 .auth-check h3 { margin: 0 0 8px; font-size: 18px; color: var(--ink); }
 .auth-check p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--muted); }
 
+.recipe-ingredients { margin: 25px 0; }.recipe-ingredients-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 1px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--line); }.recipe-ingredient { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 12px 14px; background: var(--card); }.recipe-ingredient-name { color: var(--ink); font-size: 13px; font-weight: 500; }.recipe-ingredient-opt { color: var(--muted); font-style: normal; font-size: 11px; font-weight: 400; }.recipe-ingredient-qty { flex: 0 0 auto; color: var(--sage); font: 500 12px 'DM Mono', monospace; text-align: right; }
+
 .premium-auth-hint { margin: 4px 0 12px; font-size: 13px; line-height: 1.5; color: var(--muted); text-align: center; }
 .premium-checkout { width: 100%; max-height: 60vh; overflow-y: auto; margin-bottom: 8px; border-radius: 12px; text-align: left; }
 .premium-checkout-error { margin: 0 0 8px; font-size: 13px; line-height: 1.4; color: var(--accent); text-align: center; }
